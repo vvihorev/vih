@@ -1,7 +1,7 @@
 import pytest
 
 from lexer import Lexer, TokenType, Token
-from parser import Parser
+from parser import ExpressionStatement, Identifier, IntegerLiteral, Parser
 
 
 def check_parser_errors(parser):
@@ -58,4 +58,34 @@ def test_return_statement():
         if stmt.return_value:
             assert stmt.return_value.token == token
     check_parser_errors(parser)
+
+
+def test_identifier_expression():
+    input = "some_var;"
+    lexer = Lexer(input)
+    parser = Parser(lexer)
+    program = parser.parse_program()
+
+    assert program is not None
+    assert len(program.statements) == 1
+    expr_stmt = program.statements[0]
+    assert type(expr_stmt) == ExpressionStatement
+    identifier = expr_stmt.expression
+    assert type(identifier) == Identifier
+    assert identifier.value == 'some_var'
+
+
+def test_integer_literal_expression():
+    input = "534;"
+    lexer = Lexer(input)
+    parser = Parser(lexer)
+    program = parser.parse_program()
+
+    assert program is not None
+    assert len(program.statements) == 1
+    expr_stmt = program.statements[0]
+    assert type(expr_stmt) == ExpressionStatement
+    identifier = expr_stmt.expression
+    assert type(identifier) == IntegerLiteral
+    assert identifier.value == 534
 

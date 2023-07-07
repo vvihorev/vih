@@ -154,7 +154,7 @@ class Parser:
 
     def parse_expression_statement(self):
         stmt = ExpressionStatement(self.cur_token)
-        # stmt.expression = self.parse_expression(Precedence.LOWEST)
+        stmt.expression = self.parse_expression(Precedence.LOWEST)
         if self._peek_token_is(TokenType.SEMICOLON):
             self.advance_tokens()
         return stmt

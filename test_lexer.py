@@ -15,6 +15,7 @@ from lexer import TokenType, Lexer
         ('+', TokenType.PLUS),
         ('*', TokenType.ASTERISK),
         ('/', TokenType.DIV),
+        ('=', TokenType.EQUALS),
     ]
 )
 def test_valid_symbols(ch, tt):
@@ -23,7 +24,7 @@ def test_valid_symbols(ch, tt):
     assert token is not None
     assert token.token_type == tt
     assert token.literal == ch
-    assert lex.next_token() is None
+    assert lex.next_token().token_type is TokenType.EOF
 
 
 @mark.parametrize(
@@ -45,7 +46,7 @@ def test_valid_digits_and_identifiers(ch, tt):
     assert token is not None
     assert token.token_type == tt
     assert token.literal == ch
-    assert lex.next_token() is None
+    assert lex.next_token().token_type is TokenType.EOF
 
 
 @mark.parametrize(
@@ -55,6 +56,7 @@ def test_valid_digits_and_identifiers(ch, tt):
         ('let', TokenType.LET),
         ('else', TokenType.ELSE),
         ('func', TokenType.FUNC),
+        ('return', TokenType.RETURN),
     ]
 )
 def test_valid_keyword_identifiers(ch, tt):
@@ -63,7 +65,7 @@ def test_valid_keyword_identifiers(ch, tt):
     assert token is not None
     assert token.token_type == tt
     assert token.literal == ch
-    assert lex.next_token() is None
+    assert lex.next_token().token_type is TokenType.EOF
 
 
 @mark.parametrize(
@@ -99,7 +101,80 @@ def test_valid_streams(cs, ts):
     lex = Lexer(cs)
     token = lex.next_token()
     cur_ts = 0
-    while token is not None:
+    while token.token_type != TokenType.EOF:
+        assert token.token_type == ts[cur_ts][0]
+        assert token.literal == ts[cur_ts][1]
+        cur_ts += 1
+        token = lex.next_token()
+
+
+@mark.parametrize(
+    'cs,ts', [
+        (
+            'x == y', [
+                (TokenType.ID, 'x'),
+                (TokenType.EQ, '=='),
+                (TokenType.ID, 'y'),
+            ]
+        ), (
+            'x != y', [
+                (TokenType.ID, 'x'),
+                (TokenType.NEQ, '!='),
+                (TokenType.ID, 'y'),
+            ]
+        ), (
+            'x < y', [
+                (TokenType.ID, 'x'),
+                (TokenType.LT, '<'),
+                (TokenType.ID, 'y'),
+            ]
+        ), (
+            'x > y', [
+                (TokenType.ID, 'x'),
+                (TokenType.GT, '>'),
+                (TokenType.ID, 'y'),
+            ]
+        ), (
+            'x <= y', [
+                (TokenType.ID, 'x'),
+                (TokenType.LEQ, '<='),
+                (TokenType.ID, 'y'),
+            ]
+        ), (
+            'x >= y', [
+                (TokenType.ID, 'x'),
+                (TokenType.GEQ, '>='),
+                (TokenType.ID, 'y'),
+            ]
+        )
+    ]
+)
+def test_equality_operations(cs, ts):
+    lex = Lexer(cs)
+    token = lex.next_token()
+    cur_ts = 0
+    while token.token_type != TokenType.EOF:
+        assert token.token_type == ts[cur_ts][0]
+        assert token.literal == ts[cur_ts][1]
+        cur_ts += 1
+        token = lex.next_token()
+
+
+@mark.parametrize(
+    'cs,ts', [
+        (
+            '!x', [
+                (TokenType.NOT, '!'),
+                (TokenType.ID, 'x'),
+            ]
+        )
+    ]
+)
+def test_logical_operations(cs, ts):
+    lex = Lexer(cs)
+    token = lex.next_token()
+    cur_ts = 0
+    while token.token_type != TokenType.EOF:
         assert token.token_type == ts[cur_ts][0]
         assert token.literal == ts[cur_ts][1]
         cur_ts += 1
@@ -112,6 +187,3 @@ def test_trailing_whitespace():
     assert token
     token = lex.next_token()
 
-
-def test_comments():
-   pass  

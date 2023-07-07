@@ -1,4 +1,4 @@
-from lexer import Lexer
+from lexer import Lexer, TokenType
 
 
 print("Welcome to the vih REPL!")
@@ -8,7 +8,7 @@ try:
         input_string = input()
         lex = Lexer(input_string)
         token = lex.next_token()
-        while token is not None:
+        while token.token_type != TokenType.EOF:
             print(token)
             token = lex.next_token()
 except KeyboardInterrupt:

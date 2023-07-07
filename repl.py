@@ -1,7 +1,7 @@
 from lexer import Lexer
 
 
-print("Welcome to the slang REPL!")
+print("Welcome to the vih REPL!")
 try:
     while True:
         print(">> ", end='')

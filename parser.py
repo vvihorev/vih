@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from abc import ABC#, abstractmethod
+from abc import ABC, abstractmethod
 from typing import Optional
 
 from lexer import Lexer, Token, TokenType
@@ -17,8 +17,9 @@ class Precedence(Enum):
 
 class Node(ABC):
     def __init__(self):
-        self.token_literal: str
-
+        pass
+    
+    @abstractmethod
     def __str__(self):
         pass
 
@@ -30,9 +31,9 @@ class Statement(Node):
 
 
 class Expression(Node):
-    def __init__(self):
+    def __init__(self, token):
+        self.token = token
         super().__init__()
-
 
 
 class Program(Node):
@@ -47,7 +48,8 @@ class Program(Node):
 class ExpressionStatement(Statement):
     def __init__(self, token):
         super().__init__(token)
-        self.expression: Expression = None
+        # TODO: supply nodes with everything on creation?
+        self.expression: Optional[Expression] = None
 
     def __str__(self):
         return f"{self.expression};"
@@ -56,8 +58,8 @@ class ExpressionStatement(Statement):
 class LetStatement(Statement):
     def __init__(self, token):
         super().__init__(token)
-        self.name: Identifier = None
-        self.value: Expression = None
+        self.name: Optional[Identifier] = None
+        self.value: Optional[Expression] = None
 
     def __str__(self):
         return f"{self.token.literal} {self.name} = {self.value};"
@@ -66,7 +68,7 @@ class LetStatement(Statement):
 class ReturnStatement(Statement):
     def __init__(self, token):
         super().__init__(token)
-        self.return_value: Expression = None
+        self.return_value: Optional[Expression] = None
 
     def __str__(self):
         return f"{self.token.literal} {self.return_value};"
@@ -74,8 +76,7 @@ class ReturnStatement(Statement):
 
 class Identifier(Expression):
     def __init__(self, token, value):
-        super().__init__()
-        self.token: Token = token
+        super().__init__(token)
         self.value: str = value
 
     def __str__(self):
@@ -84,12 +85,21 @@ class Identifier(Expression):
 
 class IntegerLiteral(Expression):
     def __init__(self, token, value):
-        super().__init__()
-        self.token: Token = token
+        super().__init__(token)
         self.value: int = value
 
     def __str__(self):
         return f"{self.value}"
+
+
+class PrefixExpression(Expression):
+    def __init__(self, token):
+        super().__init__(token)
+        self.operator: str = ''
+        self.right: Optional[Expression] = None
+
+    def __str__(self):
+        return f"({self.operator}{self.right})"
 
 
 class Parser:
@@ -104,16 +114,13 @@ class Parser:
         self.prefix_functions = {
             TokenType.ID: self.parse_identifier,
             TokenType.DIGIT: self.parse_integer_literal,
+            TokenType.NOT: self.parse_prefix_expression,
+            TokenType.MINUS: self.parse_prefix_expression,
         }
         self.infix_functions = {}
 
-    def advance_tokens(self) -> None:
-        self.cur_token = self.next_token
-        self.next_token = self.lexer.next_token()
-
     def parse_program(self) -> Program:
         self.program = Program()
-        self.program.token_literal = self.cur_token.literal
         while not self._cur_token_is(TokenType.EOF):
             stmt = self.parse_statement()
             if stmt is not None:
@@ -160,17 +167,22 @@ class Parser:
         return stmt
 
     def parse_expression(self, precedence: Precedence):
-        prefix = self.prefix_functions[self.cur_token.token_type]
-        if not prefix:
+        prefix = self.prefix_functions.get(self.cur_token.token_type, None)
+        if prefix is None:
+            self.errors.append(f"No prefix parser function for {self.cur_token}")
             return None
         left_exp = prefix()
 
         return left_exp
 
-    def parse_prefix_function(self):
-        pass
+    def parse_prefix_expression(self):
+        expr = PrefixExpression(self.cur_token)
+        expr.operator = self.cur_token.literal
+        self.advance_tokens()
+        expr.right = self.parse_expression(Precedence.PREFIX)
+        return expr
 
-    def parse_infix_function(self, expr: Expression):
+    def parse_infix_expression(self, expr: Expression):
         pass
 
     def parse_identifier(self):
@@ -178,6 +190,10 @@ class Parser:
 
     def parse_integer_literal(self):
         return IntegerLiteral(self.cur_token, int(self.cur_token.literal))
+
+    def advance_tokens(self) -> None:
+        self.cur_token = self.next_token
+        self.next_token = self.lexer.next_token()
 
     def _cur_token_is(self, tt: TokenType):
         return self.cur_token.token_type == tt

@@ -8,8 +8,10 @@ from parser import (
     LetStatement,
     PrefixExpression,
     InfixExpression,
+    CallExpression,
     IfExpression,
     IntegerLiteral,
+    FunctionLiteral,
     Boolean,
     ReturnStatement,
     Identifier,
@@ -19,9 +21,13 @@ from parser import (
 class Environment:
     def __init__(self):
         self.store = {}
+        self.outer: Optional[Environment] = None
 
     def get(self, identifier):
-        return self.store.get(identifier, None)
+        value = self.store.get(identifier, None)
+        if value is None and self.outer is not None:
+            return self.outer.get(identifier)
+        return value
 
     def set(self, identifier, value):
         self.store[identifier] = value
@@ -31,6 +37,7 @@ class ObjectType(Enum):
     INTEGER = auto()
     BOOLEAN = auto()
     RETURN_VALUE = auto()
+    FUNCTION = auto()
     ERROR = auto()
     NULL = auto()
 
@@ -68,6 +75,18 @@ class ReturnObject(Object):
         return str(self.value)
 
 
+class FunctionObject(Object):
+    def __init__(self, parameters, body, env):
+        super().__init__(ObjectType.FUNCTION)
+        self.parameters = parameters
+        self.body = body
+        self.env = env
+
+    def __str__(self) -> str:
+        params = ', '.join([str(p) for p in self.parameters])
+        return f"func({params}) {{\n{self.body}\n}}"
+
+
 class ErrorObject(Object):
     def __init__(self, msg):
         super().__init__(ObjectType.ERROR)
@@ -75,6 +94,7 @@ class ErrorObject(Object):
 
     def __str__(self) -> str:
         return f"ERROR: {self.msg}"
+
 
 class NullObject(Object):
     def __init__(self):
@@ -131,6 +151,18 @@ def eval(node, env: Environment):
         if value is None:
             return new_error("identifier not found: %s", node.value)
         return value
+    if isinstance(node, FunctionLiteral):
+        params = node.parameters
+        body = node.body
+        return FunctionObject(params, body, env)
+    if isinstance(node, CallExpression):
+        function = eval(node.function, env)
+        if is_error(function):
+            return function
+        args = eval_expressions(node.arguments, env)
+        if len(args) == 1 and is_error(args[0]):
+            return args[0]
+        return apply_function(function, args)
     return None
 
 
@@ -153,6 +185,37 @@ def eval_block_statement(block, env):
             if isinstance(result, ReturnObject) or isinstance(result, ErrorObject):
                 return result
     return result
+
+
+def eval_expressions(expressions, env):
+    result = []
+    for expr in expressions:
+        evaluated = eval(expr, env)
+        if is_error(evaluated):
+            return evaluated
+        result.append(evaluated)
+    return result
+
+
+def apply_function(function, args):
+    if not isinstance(function, FunctionObject):
+        return new_error("not a function: %s", get_type_name(function))
+    extended_env = extend_function_env(function, args)
+    evaluated = eval(function.body, extended_env)
+    return unwrap_return_value(evaluated)
+
+
+def extend_function_env(function, args):
+    env = new_enclosed_environment(function.env)
+    for i, param in enumerate(function.parameters):
+        env.set(param.value, args[i])
+    return env
+
+
+def unwrap_return_value(obj):
+    if isinstance(obj, ReturnObject):
+        return obj.value
+    return obj
 
 
 def eval_prefix_expression(operator, right):
@@ -271,4 +334,10 @@ def get_type_name(expr):
         return expr.otype.name
     except AttributeError:
         return None
+
+
+def new_enclosed_environment(outer):
+    env = Environment()
+    env.outer = outer
+    return env
 

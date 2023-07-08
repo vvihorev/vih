@@ -96,7 +96,7 @@ class BlockStatement(Statement):
         self.statements: List[Statement] = []
 
     def __str__(self):
-        return f"{{{' '.join([str(stmt) for stmt in self.statements])}}}"
+        return f"{' '.join([str(stmt) for stmt in self.statements])}"
 
 
 class Identifier(Expression):
@@ -167,8 +167,8 @@ class IfExpression(Expression):
 
     def __str__(self):
         if self.alternative is not None:
-            return f"if ({self.condition}) {self.consequence} else {self.alternative}"
-        return f"if ({self.condition}) {self.consequence}"
+            return f"if ({self.condition}) {{{self.consequence}}} else {{{self.alternative}}}"
+        return f"if ({self.condition}) {{{self.consequence}}}"
 
 
 class CallExpression(Expression):

@@ -129,3 +129,26 @@ def test_error_handling(input, expected_message):
 def test_let_statement(input, expected_value):
     check_integer_object(get_eval(input), expected_value)
 
+
+def test_function_object():
+    input = "func(x) { x + 2; };"
+    evaluated = get_eval(input)
+    assert evaluated.otype == ObjectType.FUNCTION
+    assert len(evaluated.parameters) == 1
+    assert str(evaluated.body) == '(x + 2);'
+
+
+@pytest.mark.parametrize(
+    'input,expected_value', [
+        ('let identity = func(x) { x; }; identity(5);', 5),
+        ('let identity = func(x) { return x; }; identity(5);', 5),
+        ('let double = func(x) { return x + x; }; double(5);', 10),
+        ('let add = func(x, y) { return x + y; }; add(5, 7);', 12),
+        ('let add = func(x, y) { return x + y; }; add(5 + 5, add(5, 5));', 20),
+        ('func(x){x;}(5)', 5),
+    ]
+)
+def test_function_application(input, expected_value):
+    evaluated = get_eval(input)
+    check_integer_object(evaluated, expected_value)
+

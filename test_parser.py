@@ -4,7 +4,7 @@ from lexer import Lexer, TokenType
 from parser import (
     Parser,
     Identifier,
-    Expression,
+    Boolean,
     IntegerLiteral,
     ReturnStatement,
     ExpressionStatement,
@@ -26,22 +26,29 @@ def get_program(input_string):
 
 
 def check_integer_literal(node: IntegerLiteral, value: int):
-    assert type(node) == IntegerLiteral
     assert node.token.token_type == TokenType.DIGIT
     assert node.value == value
 
 
 def check_identifier(node: Identifier, value: str):
-    assert type(node) == Identifier
     assert node.token.literal == value
     assert node.value == value
 
 
+def check_boolean(node: Boolean, value: str):
+    assert node.token.literal == str(value)
+    assert node.value == value
+
+
 def check_literal_expression(expr, expected_value):
-    if type(expected_value) == int:
+    if type(expr) == IntegerLiteral:
         check_integer_literal(expr, expected_value)
-    elif type(expected_value) == str:
-        check_literal_expression(expr, expected_value)
+    elif type(expr) == Identifier:
+        check_identifier(expr, expected_value)
+    elif type(expr) == Boolean:
+        check_boolean(expr, expected_value)
+    else:
+        raise ValueError(f"Unexpected expression type: {type(expr)}")
     
 
 def check_infix_expression(expr, left, op, right):
@@ -115,6 +122,16 @@ def test_integer_literal_expression():
     check_integer_literal(integer_literal, 534)
 
 
+def test_boolean_expression():
+    program = get_program("True;False;")
+
+    assert program is not None
+    stmts = program.statements
+    assert len(stmts) == 2
+    check_literal_expression(stmts[0].expression, True)
+    check_literal_expression(stmts[1].expression, False)
+
+
 @pytest.mark.parametrize(
     'input,operator,integer_value',
     [
@@ -173,4 +190,16 @@ def test_single_infix_operators(input, operator, lvalue, rvalue):
 def test_multiple_infix_operators(input,output):
     program = get_program(input)
     assert str(program) == output
+
+
+@pytest.mark.parametrize(
+    'input,output', [
+        ('2 + 3 == 5 == True', '(((2 + 3) == 5) == True);'),
+        ('!True == False', '((!True) == False);'),
+    ]
+)
+def test_boolean_expressions(input, output):
+    program = get_program(input)
+    assert str(program) == output
+    
 

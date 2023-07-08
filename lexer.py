@@ -27,6 +27,8 @@ class TokenType(Enum):
 
     # Logical operators
     NOT = auto()
+    TRUE = auto()
+    FALSE = auto()
 
     # Special words and identifiers
     IF = auto()
@@ -47,6 +49,8 @@ KEYWORDS = {
     'func': TokenType.FUNC,    
     'let': TokenType.LET,
     'return': TokenType.RETURN,
+    'True': TokenType.TRUE,
+    'False': TokenType.FALSE,
 }
 
 

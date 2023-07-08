@@ -109,6 +109,15 @@ class IntegerLiteral(Expression):
         return f"{self.value}"
 
 
+class Boolean(Expression):
+    def __init__(self, token, value):
+        super().__init__(token)
+        self.value: bool = value
+
+    def __str__(self):
+        return f"{self.value}"
+
+
 class PrefixExpression(Expression):
     def __init__(self, token):
         super().__init__(token)
@@ -142,6 +151,8 @@ class Parser:
         self.prefix_functions = {
             TokenType.ID: self.parse_identifier,
             TokenType.DIGIT: self.parse_integer_literal,
+            TokenType.TRUE: self.parse_boolean,
+            TokenType.FALSE: self.parse_boolean,
             TokenType.NOT: self.parse_prefix_expression,
             TokenType.MINUS: self.parse_prefix_expression,
         }
@@ -243,6 +254,10 @@ class Parser:
 
     def parse_integer_literal(self):
         return IntegerLiteral(self.cur_token, int(self.cur_token.literal))
+
+    def parse_boolean(self):
+        value = True if self.cur_token.literal == 'True' else False
+        return Boolean(self.cur_token, value)
 
     def advance_tokens(self) -> None:
         self.cur_token = self.next_token

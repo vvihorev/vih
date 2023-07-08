@@ -41,7 +41,7 @@ def check_identifier(node: Identifier, value: str):
 
 
 def check_boolean(node: Boolean, value: str):
-    assert node.token.literal == str(value)
+    assert node.token.literal == str(value).lower()
     assert node.value == value
 
 
@@ -128,7 +128,7 @@ def test_integer_literal_expression():
 
 
 def test_boolean_expression():
-    program = get_program("True;False;")
+    program = get_program("true;false;")
 
     assert program is not None
     stmts = program.statements

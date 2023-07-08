@@ -406,7 +406,7 @@ class Parser:
         return params
 
     def parse_boolean(self):
-        value = True if self.cur_token.literal == 'True' else False
+        value = True if self.cur_token.literal == 'true' else False
         return Boolean(self.cur_token, value)
 
     def advance_tokens(self) -> None:

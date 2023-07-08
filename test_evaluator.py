@@ -36,16 +36,32 @@ def test_eval_integer_expression(input, value):
 
 @pytest.mark.parametrize(
     'input,value', [
-        ('True', True),
-        ('False', False),
-        ('!True', False),
-        ('!False', True),
+        ('true', True),
+        ('false', False),
+        ('!true', False),
+        ('!false', True),
         ('!5', False),
         ('!!5', True),
-        ('!!True', True),
+        ('!!true', True),
     ]
 )
 def test_eval_boolean_expression(input, value):
     evaluated = get_eval(input)
     check_boolean_object(evaluated, value)
 
+
+@pytest.mark.skip
+@pytest.mark.parametrize(
+    'input,value', [
+        ('if (True) { 10 }', 10),
+        ('if (False) { 10 }', 10),
+        ('if (true) { 10 }', 10),
+        ('if (true) { 10 }', 10),
+        ('if (true) { 10 }', 10),
+        ('if (true) { 10 }', 10),
+        ('if (true) { 10 }', 10),
+    ]
+)
+def test_if_else_expression(input, value):
+    evaluated = get_eval(input)
+    check_boolean_object(evaluated, value)

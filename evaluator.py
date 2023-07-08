@@ -55,8 +55,7 @@ FALSE = BooleanObject(False)
 
 
 def eval(node):
-    print(node)
-    print("evaluating:", type(node), node.token)
+    # print("evaluating:", type(node), node.token)
     if isinstance(node, Program):
         return eval_statements(node.statements)
     if isinstance(node, ExpressionStatement):

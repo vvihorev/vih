@@ -52,8 +52,8 @@ KEYWORDS = {
     'func': TokenType.FUNC,    
     'let': TokenType.LET,
     'return': TokenType.RETURN,
-    'True': TokenType.TRUE,
-    'False': TokenType.FALSE,
+    'true': TokenType.TRUE,
+    'false': TokenType.FALSE,
 }
 
 

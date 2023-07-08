@@ -45,18 +45,16 @@ class Node(ABC):
 class Statement(Node):
     def __init__(self, token):
         self.token = token
-        super().__init__()
 
 
 class Expression(Node):
     def __init__(self, token):
         self.token = token
-        super().__init__()
 
 
 class Program(Node):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, token):
+        self.token = token
         self.statements = []
 
     def __str__(self):
@@ -227,7 +225,7 @@ class Parser:
         }
 
     def parse_program(self) -> Program:
-        self.program = Program()
+        self.program = Program(self.cur_token)
         while not self._cur_token_is(TokenType.EOF):
             stmt = self.parse_statement()
             if stmt is not None:
@@ -444,12 +442,3 @@ class Parser:
             return precedence
         return Precedence.LOWEST
 
-
-if __name__ == "__main__":
-    lex = Lexer("2-5")
-    parser = Parser(lex)
-
-    parser.parse_program()
-    if parser.errors:
-        print(parser.errors)
-    print(parser.program)

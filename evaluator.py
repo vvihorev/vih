@@ -4,8 +4,10 @@ from enum import Enum, auto
 from parser import (
     Program,
     ExpressionStatement,
+    BlockStatement,
     PrefixExpression,
     InfixExpression,
+    IfExpression,
     IntegerLiteral,
     Boolean,
 )
@@ -38,12 +40,12 @@ class BooleanObject(Object):
         self.value = value
 
     def __str__(self) -> str:
-        return str(self.value)
+        return str(self.value).lower()
 
 
 class NullObject(Object):
     def __init__(self):
-        super().__init__(ObjectType.BOOLEAN)
+        super().__init__(ObjectType.NULL)
 
     def __str__(self) -> str:
         return "null"
@@ -60,6 +62,8 @@ def eval(node):
         return eval_statements(node.statements)
     if isinstance(node, ExpressionStatement):
         return eval(node.expression)
+    if isinstance(node, BlockStatement):
+        return eval_statements(node.statements)
     if isinstance(node, PrefixExpression):
         right = eval(node.right)
         return eval_prefix_expression(node.operator, right)
@@ -67,6 +71,8 @@ def eval(node):
         left = eval(node.left)
         right = eval(node.right)
         return eval_infix_expression(node.operator, left, right)
+    if isinstance(node, IfExpression):
+        return eval_if_expression(node)
     if isinstance(node, IntegerLiteral):
         return IntegerObject(node.value)
     if isinstance(node, Boolean):
@@ -94,6 +100,19 @@ def eval_prefix_expression(operator, right):
 def eval_infix_expression(operator, left, right):
     if isinstance(left, IntegerObject) and isinstance(right, IntegerObject):
         return eval_integer_infix_expression(operator, left, right)
+    match operator:
+        case '<':
+            return native_bool_to_boolean_object(left.value < right.value)
+        case '>':
+            return native_bool_to_boolean_object(left.value > right.value)
+        case '<=':
+            return native_bool_to_boolean_object(left.value <= right.value)
+        case '>=':
+            return native_bool_to_boolean_object(int(left.value >= right.value))
+        case '==':
+            return native_bool_to_boolean_object(left.value == right.value)
+        case '!=':
+            return native_bool_to_boolean_object(int(left.value != right.value))
     return NULL
 
 
@@ -130,4 +149,37 @@ def eval_integer_infix_expression(operator, left, right):
             return IntegerObject(left.value * right.value)
         case '/':
             return IntegerObject(int(left.value / right.value))
+        case '<':
+            return native_bool_to_boolean_object(left.value < right.value)
+        case '>':
+            return native_bool_to_boolean_object(left.value > right.value)
+        case '<=':
+            return native_bool_to_boolean_object(left.value <= right.value)
+        case '>=':
+            return native_bool_to_boolean_object(int(left.value >= right.value))
+        case '==':
+            return native_bool_to_boolean_object(left.value == right.value)
+        case '!=':
+            return native_bool_to_boolean_object(int(left.value != right.value))
+
+
+def eval_if_expression(node):
+    condition = eval(node.condition)
+    if is_truthy(condition):
+        return eval(node.consequence)
+    elif node.alternative is not None:
+        return eval(node.alternative)
+    else:
+        return NULL
+
+
+def is_truthy(node):
+    if node == NULL:
+        return False
+    if node == TRUE:
+        return True
+    if node == FALSE:
+        return False
+    return True
+
 

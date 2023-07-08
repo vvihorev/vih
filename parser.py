@@ -163,20 +163,12 @@ class IfExpression(Expression):
         super().__init__(token)
         self.condition: Optional[Expression] = None
         self.consequence: Optional[BlockStatement] = None
-
-    def __str__(self):
-        return f"if ({self.condition}) {self.consequence}"
-
-
-class IfElseExpression(Expression):
-    def __init__(self, token):
-        super().__init__(token)
-        self.condition: Optional[Expression] = None
-        self.consequence: Optional[BlockStatement] = None
         self.alternative: Optional[BlockStatement] = None
 
     def __str__(self):
-        return f"if ({self.condition}) {self.consequence} else {self.alternative}"
+        if self.alternative is not None:
+            return f"if ({self.condition}) {self.consequence} else {self.alternative}"
+        return f"if ({self.condition}) {self.consequence}"
 
 
 class CallExpression(Expression):
@@ -326,24 +318,19 @@ class Parser:
         return expr
 
     def parse_if_expression(self):
-        token = self.cur_token
+        expr = IfExpression(self.cur_token)
         if not self._expect_peek(TokenType.LPAR):
             return None
         self.advance_tokens()
-        condition = self.parse_expression(Precedence.LOWEST)
+        expr.condition = self.parse_expression(Precedence.LOWEST)
         if not self._expect_peek(TokenType.RPAR):
             return None
         self.advance_tokens()
-        consequence = self.parse_block_statement()
+        expr.consequence = self.parse_block_statement()
         if self._peek_token_is(TokenType.ELSE):
-            expr = IfElseExpression(token)
             self.advance_tokens()
             self.advance_tokens()
             expr.alternative = self.parse_block_statement()
-        else:
-            expr = IfExpression(token)
-        expr.condition = condition
-        expr.consequence = consequence
         return expr
 
     def parse_call_expression(self, function):

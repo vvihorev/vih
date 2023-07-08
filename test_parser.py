@@ -13,7 +13,6 @@ from parser import (
     PrefixExpression,
     InfixExpression,
     IfExpression,
-    IfElseExpression,
     CallExpression,
 )
 
@@ -247,7 +246,7 @@ def test_if_else_expression():
     expr_stmt = stmts[0]
     assert type(expr_stmt) == ExpressionStatement
     if_else_expr = expr_stmt.expression
-    assert type(if_else_expr) == IfElseExpression
+    assert type(if_else_expr) == IfExpression
     condition = if_else_expr.condition
     consequence = if_else_expr.consequence
     alternative = if_else_expr.alternative

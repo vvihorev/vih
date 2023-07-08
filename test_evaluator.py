@@ -18,6 +18,11 @@ def check_boolean_object(evaluated, expected_value):
     assert evaluated.value == expected_value
 
 
+def check_null_object(evaluated):
+    print(evaluated, dir(evaluated), evaluated.otype)
+    assert evaluated.otype == ObjectType.NULL
+
+
 @pytest.mark.parametrize(
     'input,value', [
         ('10', 10),
@@ -43,6 +48,10 @@ def test_eval_integer_expression(input, value):
         ('!5', False),
         ('!!5', True),
         ('!!true', True),
+        ('3 == 5 - 2', True),
+        ('2 < 3', True),
+        ('3 == 1', False),
+        ('2 > 3', False),
     ]
 )
 def test_eval_boolean_expression(input, value):
@@ -50,18 +59,22 @@ def test_eval_boolean_expression(input, value):
     check_boolean_object(evaluated, value)
 
 
-@pytest.mark.skip
 @pytest.mark.parametrize(
     'input,value', [
-        ('if (True) { 10 }', 10),
-        ('if (False) { 10 }', 10),
         ('if (true) { 10 }', 10),
-        ('if (true) { 10 }', 10),
-        ('if (true) { 10 }', 10),
-        ('if (true) { 10 }', 10),
-        ('if (true) { 10 }', 10),
+        ('if (false) { 10 }', None),
+        ('if (1) { 10 }', 10),
+        ('if (1 < 2) { 10 }', 10),
+        ('if (1 > 2) { 10 }', None),
+        ('if (1 < 2) { 10 } else { 20 }', 10),
+        ('if (1 > 2) { 10 } else { 20 }', 20),
     ]
 )
 def test_if_else_expression(input, value):
     evaluated = get_eval(input)
-    check_boolean_object(evaluated, value)
+    print("evaluated to:", evaluated)
+    if value is not None:
+        check_integer_object(evaluated, value)
+    else:
+        check_null_object(evaluated)
+

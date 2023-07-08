@@ -1,5 +1,5 @@
 # vih
-Interpreter for vih, a js-like language
+Interpreter for vih, a tiny little language
 
 ```
 let max = func(a, b) {

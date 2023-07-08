@@ -155,6 +155,7 @@ class Parser:
             TokenType.FALSE: self.parse_boolean,
             TokenType.NOT: self.parse_prefix_expression,
             TokenType.MINUS: self.parse_prefix_expression,
+            TokenType.LPAR: self.parse_grouped_expression,
         }
         self.infix_functions = {
             TokenType.PLUS: self.parse_infix_expression,
@@ -247,6 +248,13 @@ class Parser:
         precedence = self._cur_precedence()
         self.advance_tokens()
         expr.right = self.parse_expression(precedence)
+        return expr
+
+    def parse_grouped_expression(self):
+        self.advance_tokens()
+        expr = self.parse_expression(Precedence.LOWEST)
+        if not self._expect_peek(TokenType.RPAR):
+            return None
         return expr
 
     def parse_identifier(self):

@@ -203,3 +203,12 @@ def test_boolean_expressions(input, output):
     assert str(program) == output
     
 
+@pytest.mark.parametrize(
+    'input,output', [
+        ('1 + (2 + 3) + 4', '((1 + (2 + 3)) + 4);'),
+        ('!(True == True)', '(!(True == True));'),
+    ]
+)
+def test_operator_precedence_parsing(input, output):
+    program = get_program(input)
+    assert str(program) == output

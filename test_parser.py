@@ -1,11 +1,13 @@
+from typing import List
 import pytest
 
 from lexer import Lexer, TokenType
 from parser import (
     Parser,
     Identifier,
-    Boolean,
     IntegerLiteral,
+    FunctionLiteral,
+    Boolean,
     ReturnStatement,
     BlockStatement,
     ExpressionStatement,
@@ -275,3 +277,23 @@ def test_if_else_expression():
 def test_block_statement(input, output):
     program = get_program(input)
     assert str(program) == output
+
+
+def test_function_literal():
+    program = get_program("func(x, y) { return x + y; }")
+    stmts = program.statements
+    assert len(stmts) == 1
+    expr_stmt = stmts[0]
+    assert type(expr_stmt) == ExpressionStatement
+    func_literal = expr_stmt.expression
+    assert type(func_literal) == FunctionLiteral
+    parameters = func_literal.parameters
+    body = func_literal.body
+    assert type(body) == BlockStatement
+
+    assert parameters[0].value == 'x'
+    assert parameters[1].value == 'y'
+
+    body_stmt = body.statements[0]
+    assert type(body_stmt) == ReturnStatement
+

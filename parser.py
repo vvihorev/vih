@@ -118,6 +118,17 @@ class IntegerLiteral(Expression):
         return f"{self.value}"
 
 
+class FunctionLiteral(Expression):
+    def __init__(self, token):
+        super().__init__(token)
+        self.parameters: List[Identifier] = []
+        self.body: Optional[BlockStatement] = None
+
+    def __str__(self):
+        params = ', '.join([str(p) for p in self.parameters])
+        return f"func({params}) {self.body};"
+
+
 class Boolean(Expression):
     def __init__(self, token, value):
         super().__init__(token)
@@ -182,6 +193,7 @@ class Parser:
         self.prefix_functions = {
             TokenType.ID: self.parse_identifier,
             TokenType.DIGIT: self.parse_integer_literal,
+            TokenType.FUNC: self.parse_function_literal,
             TokenType.TRUE: self.parse_boolean,
             TokenType.FALSE: self.parse_boolean,
             TokenType.NOT: self.parse_prefix_expression,
@@ -329,6 +341,22 @@ class Parser:
 
     def parse_integer_literal(self):
         return IntegerLiteral(self.cur_token, int(self.cur_token.literal))
+
+    def parse_function_literal(self):
+        func_expr = FunctionLiteral(self.cur_token)
+        if not self._expect_peek(TokenType.LPAR):
+            return None
+        self.advance_tokens()
+
+        while not self._cur_token_is(TokenType.RPAR):
+            if self._cur_token_is(TokenType.COMMA):
+                self.advance_tokens()
+            func_expr.parameters.append(self.parse_identifier())
+            self.advance_tokens()
+
+        self.advance_tokens()
+        func_expr.body = self.parse_block_statement()
+        return func_expr
 
     def parse_boolean(self):
         value = True if self.cur_token.literal == 'True' else False

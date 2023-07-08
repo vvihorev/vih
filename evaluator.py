@@ -70,11 +70,11 @@ FALSE = BooleanObject(False)
 def eval(node):
     # print("evaluating:", type(node), node.token)
     if isinstance(node, Program):
-        return eval_statements(node.statements)
+        return eval_program(node)
     if isinstance(node, ExpressionStatement):
         return eval(node.expression)
     if isinstance(node, BlockStatement):
-        return eval_statements(node.statements)
+        return eval_block_statement(node)
     if isinstance(node, ReturnStatement):
         return ReturnObject(eval(node.return_value))
     if isinstance(node, PrefixExpression):
@@ -93,13 +93,22 @@ def eval(node):
     return None
 
 
-def eval_statements(statements):
-    last_stmt = None
-    for stmt in statements:
-        last_stmt = eval(stmt)
-        if isinstance(stmt, ReturnStatement):
-            return last_stmt.value
-    return last_stmt
+def eval_program(program):
+    result = None
+    for stmt in program.statements:
+        result = eval(stmt)
+        if isinstance(result, ReturnObject):
+            return result.value
+    return result
+
+
+def eval_block_statement(block):
+    result = None
+    for stmt in block.statements:
+        result = eval(stmt)
+        if result is not None and type(result) == ReturnObject:
+            return result
+    return result
 
 
 def eval_prefix_expression(operator, right):

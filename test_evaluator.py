@@ -87,3 +87,17 @@ def test_return_statement(input, value):
     evaluated = get_eval(input)
     check_integer_object(evaluated, value)
 
+
+def test_nested_block_statements():
+    input = """
+    if (10 > 1) {
+            if (10 > 1) {
+                    return 10
+            }
+            return 1;
+    }
+    """
+    expected_value = 10
+    evaluated = get_eval(input)
+    check_integer_object(evaluated, expected_value)
+

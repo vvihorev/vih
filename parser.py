@@ -29,6 +29,7 @@ PRECEDENCES = {
     TokenType.GT: Precedence.LESSGREATER,
     TokenType.LEQ: Precedence.LESSGREATER,
     TokenType.GEQ: Precedence.LESSGREATER,
+    TokenType.LPAR: Precedence.CALL,
 }
 
 
@@ -126,7 +127,7 @@ class FunctionLiteral(Expression):
 
     def __str__(self):
         params = ', '.join([str(p) for p in self.parameters])
-        return f"func({params}) {self.body};"
+        return f"func({params}) {self.body}"
 
 
 class Boolean(Expression):
@@ -169,7 +170,6 @@ class IfExpression(Expression):
         return f"if ({self.condition}) {self.consequence}"
 
 
-
 class IfElseExpression(Expression):
     def __init__(self, token):
         super().__init__(token)
@@ -179,6 +179,17 @@ class IfElseExpression(Expression):
 
     def __str__(self):
         return f"if ({self.condition}) {self.consequence} else {self.alternative}"
+
+
+class CallExpression(Expression):
+    def __init__(self, token):
+        super().__init__(token)
+        self.function: Optional[Expression] = None
+        self.arguments: List[Expression] = []
+
+    def __str__(self):
+        args = ', '.join([str(a) for a in self.arguments])
+        return f"{self.function}({args})"
 
 
 class Parser:
@@ -212,6 +223,7 @@ class Parser:
             TokenType.NEQ: self.parse_infix_expression,
             TokenType.LEQ: self.parse_infix_expression,
             TokenType.GEQ: self.parse_infix_expression,
+            TokenType.LPAR: self.parse_call_expression,
         }
 
     def parse_program(self) -> Program:
@@ -336,6 +348,29 @@ class Parser:
         expr.consequence = consequence
         return expr
 
+    def parse_call_expression(self, function):
+        expr = CallExpression(self.cur_token)
+        expr.function = function
+        expr.arguments = self.parse_call_arguments()
+        return expr
+
+    def parse_call_arguments(self):
+        args = []
+        if self._peek_token_is(TokenType.RPAR):
+            self.advance_tokens()
+            return args
+        self.advance_tokens() 
+        args.append(self.parse_expression(Precedence.LOWEST))
+        
+        while self._peek_token_is(TokenType.COMMA):
+            self.advance_tokens()
+            self.advance_tokens()
+            args.append(self.parse_expression(Precedence.LOWEST))
+
+        if not self._expect_peek(TokenType.RPAR):
+            return None
+        return args
+
     def parse_identifier(self):
         return Identifier(self.cur_token, self.cur_token.literal)
 
@@ -343,20 +378,34 @@ class Parser:
         return IntegerLiteral(self.cur_token, int(self.cur_token.literal))
 
     def parse_function_literal(self):
-        func_expr = FunctionLiteral(self.cur_token)
+        expr = FunctionLiteral(self.cur_token)
         if not self._expect_peek(TokenType.LPAR):
             return None
-        self.advance_tokens()
 
-        while not self._cur_token_is(TokenType.RPAR):
-            if self._cur_token_is(TokenType.COMMA):
-                self.advance_tokens()
-            func_expr.parameters.append(self.parse_identifier())
+        expr.parameters = self.parse_function_parameters()
+
+        if not self._expect_peek(TokenType.LCURLY):
+            return None
+        expr.body = self.parse_block_statement()
+        return expr
+
+    def parse_function_parameters(self):
+        params = []
+        if self._peek_token_is(TokenType.RPAR):
             self.advance_tokens()
+            return params
 
         self.advance_tokens()
-        func_expr.body = self.parse_block_statement()
-        return func_expr
+        params.append(self.parse_identifier())
+
+        while self._peek_token_is(TokenType.COMMA):
+            self.advance_tokens()
+            self.advance_tokens()
+            params.append(self.parse_identifier())
+
+        if not self._expect_peek(TokenType.RPAR):
+            return None
+        return params
 
     def parse_boolean(self):
         value = True if self.cur_token.literal == 'True' else False

@@ -1,4 +1,3 @@
-from typing import List
 import pytest
 
 from lexer import Lexer, TokenType
@@ -15,6 +14,7 @@ from parser import (
     InfixExpression,
     IfExpression,
     IfElseExpression,
+    CallExpression,
 )
 
 
@@ -296,4 +296,29 @@ def test_function_literal():
 
     body_stmt = body.statements[0]
     assert type(body_stmt) == ReturnStatement
+
+
+def test_function_call_expression():
+    program = get_program("func(x, y) { return x + y; } (1, 2)")
+    stmts = program.statements
+    assert len(stmts) == 1
+    expr_stmt = stmts[0]
+    assert type(expr_stmt) == ExpressionStatement
+    call_expr = expr_stmt.expression
+    assert type(call_expr) == CallExpression
+    function = call_expr.function
+    arguments = call_expr.arguments
+
+    assert type(function) == FunctionLiteral
+    arg0 = arguments[0]
+    arg1 = arguments[1]
+    assert type(arg0) == IntegerLiteral
+    assert type(arg1) == IntegerLiteral
+    assert arg0.value == 1
+    assert arg1.value == 2
+
+
+def test_function_call_printing():
+    program = get_program('add(1, 2);')
+    assert str(program) == 'add(1, 2);'
 

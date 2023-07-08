@@ -139,7 +139,7 @@ def eval_prefix_expression(operator, right):
         case '-':
             return eval_minus_prefix_operator_expression(right)
         case _:
-            return new_error('unknown operator: %s%s', operator, right.otype.name)
+            return new_error('unknown operator: %s%s', operator, get_type_name(right))
 
 
 def eval_infix_expression(operator, left, right):
@@ -159,8 +159,8 @@ def eval_infix_expression(operator, left, right):
         case '!=':
             return native_bool_to_boolean_object(int(left.value != right.value))
     if type(left) != type(right):
-        return new_error('type mismatch: %s %s %s', left.otype.name, operator, right.otype.name)
-    return new_error('unknown operator: %s %s %s', left.otype.name, operator, right.otype.name)
+        return new_error('type mismatch: %s %s %s', get_type_name(left), operator, get_type_name(right))
+    return new_error('unknown operator: %s %s %s', get_type_name(left), operator, get_type_name(right))
 
 
 def native_bool_to_boolean_object(value):
@@ -182,7 +182,7 @@ def eval_not_operator_expression(right):
 
 def eval_minus_prefix_operator_expression(right):
     if not isinstance(right, IntegerObject):
-        return new_error('unknown operator: -%s', right.otype.name)
+        return new_error('unknown operator: -%s', get_type_name(right))
     return IntegerObject(-right.value)
 
 
@@ -208,7 +208,7 @@ def eval_integer_infix_expression(operator, left, right):
             return native_bool_to_boolean_object(left.value == right.value)
         case '!=':
             return native_bool_to_boolean_object(int(left.value != right.value))
-    return new_error('unknown operator: %s %s %s', left.otype.name, operator, right.otype.name)
+    return new_error('unknown operator: %s %s %s', get_type_name(left), operator, get_type_name(right))
 
 
 def eval_if_expression(node):
@@ -234,7 +234,6 @@ def is_truthy(node):
 
 
 def new_error(format_string, *params):
-    print(format_string % params)
     return ErrorObject(format_string % params)
 
 
@@ -242,3 +241,11 @@ def is_error(obj):
     if obj is not None:
         return isinstance(obj, ErrorObject)
     return False
+
+
+def get_type_name(expr):
+    try:
+        return expr.otype.name
+    except AttributeError:
+        return None
+

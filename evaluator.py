@@ -18,6 +18,7 @@ class ObjectType(Enum):
     INTEGER = auto()
     BOOLEAN = auto()
     RETURN_VALUE = auto()
+    ERROR = auto()
     NULL = auto()
 
 
@@ -53,6 +54,14 @@ class ReturnObject(Object):
     def __str__(self) -> str:
         return str(self.value)
 
+
+class ErrorObject(Object):
+    def __init__(self, msg):
+        super().__init__(ObjectType.ERROR)
+        self.msg = msg
+
+    def __str__(self) -> str:
+        return f"ERROR: {self.msg}"
 
 class NullObject(Object):
     def __init__(self):
@@ -99,6 +108,8 @@ def eval_program(program):
         result = eval(stmt)
         if isinstance(result, ReturnObject):
             return result.value
+        if isinstance(result, ErrorObject):
+            return result
     return result
 
 
@@ -106,8 +117,9 @@ def eval_block_statement(block):
     result = None
     for stmt in block.statements:
         result = eval(stmt)
-        if result is not None and type(result) == ReturnObject:
-            return result
+        if result is not None:
+            if isinstance(result, ReturnObject) or isinstance(result, ErrorObject):
+                return result
     return result
 
 
@@ -118,7 +130,7 @@ def eval_prefix_expression(operator, right):
         case '-':
             return eval_minus_prefix_operator_expression(right)
         case _:
-            return NULL
+            return new_error('unknown operator: %s%s', operator, right.otype.name)
 
 
 def eval_infix_expression(operator, left, right):
@@ -137,7 +149,9 @@ def eval_infix_expression(operator, left, right):
             return native_bool_to_boolean_object(left.value == right.value)
         case '!=':
             return native_bool_to_boolean_object(int(left.value != right.value))
-    return NULL
+    if type(left) != type(right):
+        return new_error('type mismatch: %s %s %s', left.otype.name, operator, right.otype.name)
+    return new_error('unknown operator: %s %s %s', left.otype.name, operator, right.otype.name)
 
 
 def native_bool_to_boolean_object(value):
@@ -159,7 +173,7 @@ def eval_not_operator_expression(right):
 
 def eval_minus_prefix_operator_expression(right):
     if not isinstance(right, IntegerObject):
-        return NULL
+        return new_error('unknown operator: -%s', right.otype.name)
     return IntegerObject(-right.value)
 
 
@@ -185,6 +199,7 @@ def eval_integer_infix_expression(operator, left, right):
             return native_bool_to_boolean_object(left.value == right.value)
         case '!=':
             return native_bool_to_boolean_object(int(left.value != right.value))
+    return new_error('unknown operator: %s %s %s', left.otype.name, operator, right.otype.name)
 
 
 def eval_if_expression(node):
@@ -206,4 +221,8 @@ def is_truthy(node):
         return False
     return True
 
+
+def new_error(format_string, *params):
+    print(format_string % params)
+    return ErrorObject(format_string % params)
 

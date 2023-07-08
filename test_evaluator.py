@@ -101,3 +101,17 @@ def test_nested_block_statements():
     evaluated = get_eval(input)
     check_integer_object(evaluated, expected_value)
 
+
+@pytest.mark.parametrize(
+    'input,expected_message', [
+        ('5 + true;', 'type mismatch: INTEGER + BOOLEAN'),
+        ('5 + true; 5;', 'type mismatch: INTEGER + BOOLEAN'),
+        ('-true;', 'unknown operator: -BOOLEAN'),
+        ('false + true; 5;', 'unknown operator: BOOLEAN + BOOLEAN'),
+    ]
+)
+def test_error_handling(input, expected_message):
+    evaluated = get_eval(input)
+    assert evaluated.otype == ObjectType.ERROR
+    assert evaluated.msg == expected_message
+

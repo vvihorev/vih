@@ -7,9 +7,12 @@ from parser import (
     Boolean,
     IntegerLiteral,
     ReturnStatement,
+    BlockStatement,
     ExpressionStatement,
     PrefixExpression,
     InfixExpression,
+    IfExpression,
+    IfElseExpression,
 )
 
 
@@ -210,5 +213,65 @@ def test_boolean_expressions(input, output):
     ]
 )
 def test_operator_precedence_parsing(input, output):
+    program = get_program(input)
+    assert str(program) == output
+
+
+def test_if_expression():
+    program = get_program("if (x < y) { x };")
+    stmts = program.statements
+    assert len(stmts) == 1
+    expr_stmt = stmts[0]
+    assert type(expr_stmt) == ExpressionStatement
+    if_expr = expr_stmt.expression
+    assert type(if_expr) == IfExpression
+    condition = if_expr.condition
+    consequence = if_expr.consequence
+    assert type(condition) == InfixExpression
+    assert type(consequence) == BlockStatement
+    check_infix_expression(condition, 'x', '<', 'y')
+
+    stmts = consequence.statements
+    assert len(stmts) == 1
+    expr_stmt = stmts[0]
+    assert type(expr_stmt) == ExpressionStatement
+    assert expr_stmt.expression.value == 'x'
+
+
+def test_if_else_expression():
+    program = get_program("if (x < y) { x } else { y };")
+    stmts = program.statements
+    assert len(stmts) == 1
+    expr_stmt = stmts[0]
+    assert type(expr_stmt) == ExpressionStatement
+    if_else_expr = expr_stmt.expression
+    assert type(if_else_expr) == IfElseExpression
+    condition = if_else_expr.condition
+    consequence = if_else_expr.consequence
+    alternative = if_else_expr.alternative
+    assert type(condition) == InfixExpression
+    assert type(consequence) == BlockStatement
+    assert type(alternative) == BlockStatement
+    check_infix_expression(condition, 'x', '<', 'y')
+
+    stmts = consequence.statements
+    assert len(stmts) == 1
+    expr_stmt = stmts[0]
+    assert type(expr_stmt) == ExpressionStatement
+    assert expr_stmt.expression.value == 'x'
+
+    stmts = alternative.statements
+    assert len(stmts) == 1
+    expr_stmt = stmts[0]
+    assert type(expr_stmt) == ExpressionStatement
+    assert expr_stmt.expression.value == 'y'
+
+
+@pytest.mark.parametrize(
+    'input,output', [
+        ('if (x > y) {let x = 2; x < y;};', 'if ((x > y)) {let x = 2; (x < y);};'),
+    ]
+)
+def test_block_statement(input, output):
     program = get_program(input)
     assert str(program) == output

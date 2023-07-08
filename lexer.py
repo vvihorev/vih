@@ -9,13 +9,16 @@ class TokenType(Enum):
     RPAR = auto()
     LBRACKET = auto()
     RBRACKET = auto()
+    LCURLY = auto()
+    RCURLY = auto()
     SEMICOLON = auto()
     COMMA = auto()
+    EQUALS = auto()
+
     MINUS = auto()
     PLUS = auto()
     ASTERISK = auto()
     DIV = auto()
-    EQUALS = auto()
 
     # Comparison operators
     GT = auto()
@@ -83,6 +86,10 @@ class Lexer:
                 token = Token(TokenType.LPAR, self.ch)
             case ')':
                 token = Token(TokenType.RPAR, self.ch)
+            case '{':
+                token = Token(TokenType.LCURLY, self.ch)
+            case '}':
+                token = Token(TokenType.RCURLY, self.ch)
             case ';':
                 token = Token(TokenType.SEMICOLON, self.ch)
             case ',':

@@ -1,6 +1,6 @@
 from enum import Enum, auto
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, List
 
 from lexer import Lexer, Token, TokenType
 
@@ -91,6 +91,15 @@ class ReturnStatement(Statement):
         return f"{self.token.literal} {self.return_value};"
 
 
+class BlockStatement(Statement):
+    def __init__(self, token):
+        super().__init__(token)
+        self.statements: List[Statement] = []
+
+    def __str__(self):
+        return f"{{{' '.join([str(stmt) for stmt in self.statements])}}}"
+
+
 class Identifier(Expression):
     def __init__(self, token, value):
         super().__init__(token)
@@ -139,6 +148,28 @@ class InfixExpression(Expression):
         return f"({self.left} {self.operator} {self.right})"
 
 
+class IfExpression(Expression):
+    def __init__(self, token):
+        super().__init__(token)
+        self.condition: Optional[Expression] = None
+        self.consequence: Optional[BlockStatement] = None
+
+    def __str__(self):
+        return f"if ({self.condition}) {self.consequence}"
+
+
+
+class IfElseExpression(Expression):
+    def __init__(self, token):
+        super().__init__(token)
+        self.condition: Optional[Expression] = None
+        self.consequence: Optional[BlockStatement] = None
+        self.alternative: Optional[BlockStatement] = None
+
+    def __str__(self):
+        return f"if ({self.condition}) {self.consequence} else {self.alternative}"
+
+
 class Parser:
     def __init__(self, lexer: Lexer):
         self.lexer: Lexer = lexer
@@ -156,6 +187,7 @@ class Parser:
             TokenType.NOT: self.parse_prefix_expression,
             TokenType.MINUS: self.parse_prefix_expression,
             TokenType.LPAR: self.parse_grouped_expression,
+            TokenType.IF: self.parse_if_expression,
         }
         self.infix_functions = {
             TokenType.PLUS: self.parse_infix_expression,
@@ -212,6 +244,20 @@ class Parser:
             self.advance_tokens()
         return stmt
 
+    def parse_block_statement(self) -> BlockStatement:
+        if not self._cur_token_is(TokenType.LCURLY):
+            self.errors.append("Expected '{' at the beginning of a block statement.")
+        self.advance_tokens()
+        block_stmt = BlockStatement(self.cur_token)
+        while not self._cur_token_is(TokenType.RCURLY):
+            stmt = self.parse_statement()
+            if stmt is not None:
+                block_stmt.statements.append(stmt)
+            self.advance_tokens()
+        if self._peek_token_is(TokenType.SEMICOLON):
+            self.advance_tokens()
+        return block_stmt
+
     def parse_expression_statement(self):
         stmt = ExpressionStatement(self.cur_token)
         stmt.expression = self.parse_expression(Precedence.LOWEST)
@@ -255,6 +301,27 @@ class Parser:
         expr = self.parse_expression(Precedence.LOWEST)
         if not self._expect_peek(TokenType.RPAR):
             return None
+        return expr
+
+    def parse_if_expression(self):
+        token = self.cur_token
+        if not self._expect_peek(TokenType.LPAR):
+            return None
+        self.advance_tokens()
+        condition = self.parse_expression(Precedence.LOWEST)
+        if not self._expect_peek(TokenType.RPAR):
+            return None
+        self.advance_tokens()
+        consequence = self.parse_block_statement()
+        if self._peek_token_is(TokenType.ELSE):
+            expr = IfElseExpression(token)
+            self.advance_tokens()
+            self.advance_tokens()
+            expr.alternative = self.parse_block_statement()
+        else:
+            expr = IfExpression(token)
+        expr.condition = condition
+        expr.consequence = consequence
         return expr
 
     def parse_identifier(self):

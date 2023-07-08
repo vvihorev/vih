@@ -1,11 +1,12 @@
 import pytest
 from test_parser import get_program
-from evaluator import eval, ObjectType
+from evaluator import eval, ObjectType, Environment
 
 
 def get_eval(input):
+    env = Environment()
     program = get_program(input)
-    return eval(program) 
+    return eval(program, env) 
 
 
 def check_integer_object(evaluated, expected_value):
@@ -108,10 +109,23 @@ def test_nested_block_statements():
         ('5 + true; 5;', 'type mismatch: INTEGER + BOOLEAN'),
         ('-true;', 'unknown operator: -BOOLEAN'),
         ('false + true; 5;', 'unknown operator: BOOLEAN + BOOLEAN'),
+        ('a;', 'identifier not found: a'),
     ]
 )
 def test_error_handling(input, expected_message):
     evaluated = get_eval(input)
     assert evaluated.otype == ObjectType.ERROR
     assert evaluated.msg == expected_message
+
+
+@pytest.mark.parametrize(
+    'input,expected_value', [
+        ('let a = 5; a;', 5),
+        ('let a = 5 * 5; a;', 25),
+        ('let a = 5; let b = a; b;', 5),
+        ('let a = 5; let b = a; let c = a + b + 5; c;', 15),
+    ]
+)
+def test_let_statement(input, expected_value):
+    check_integer_object(get_eval(input), expected_value)
 

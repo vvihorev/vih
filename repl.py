@@ -1,9 +1,10 @@
 from lexer import Lexer
 from parser import Parser
-from evaluator import eval
+from evaluator import eval, Environment
 
 
 print("Welcome to the vih REPL!")
+env = Environment()
 try:
     while True:
         print(">> ", end='')
@@ -11,7 +12,7 @@ try:
         lex = Lexer(input_string)
         parser = Parser(lex)
         program = parser.parse_program()
-        result = eval(program)
+        result = eval(program, env)
 
         if parser.errors:
             print('\n'.join(parser.errors))

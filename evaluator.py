@@ -5,13 +5,26 @@ from parser import (
     Program,
     ExpressionStatement,
     BlockStatement,
+    LetStatement,
     PrefixExpression,
     InfixExpression,
     IfExpression,
     IntegerLiteral,
     Boolean,
     ReturnStatement,
+    Identifier,
 )
+
+
+class Environment:
+    def __init__(self):
+        self.store = {}
+
+    def get(self, identifier):
+        return self.store.get(identifier, None)
+
+    def set(self, identifier, value):
+        self.store[identifier] = value
 
 
 class ObjectType(Enum):
@@ -76,45 +89,55 @@ TRUE = BooleanObject(True)
 FALSE = BooleanObject(False)
 
 
-def eval(node):
-    # print("evaluating:", type(node), node.token)
+def eval(node, env: Environment):
+    # print("evaluating:", type(node), node.token, "env:", env.store)
     if isinstance(node, Program):
-        return eval_program(node)
+        return eval_program(node, env)
     if isinstance(node, ExpressionStatement):
-        return eval(node.expression)
+        return eval(node.expression, env)
     if isinstance(node, BlockStatement):
-        return eval_block_statement(node)
+        return eval_block_statement(node, env)
     if isinstance(node, ReturnStatement):
-        value = eval(node.return_value)
+        value = eval(node.return_value, env)
         if is_error(value):
             return value
         return ReturnObject(value)
+    if isinstance(node, LetStatement):
+        value = eval(node.value, env)
+        if is_error(value):
+            return value
+        env.set(node.name.value, value)
     if isinstance(node, PrefixExpression):
-        right = eval(node.right)
+        right = eval(node.right, env)
         if is_error(right):
             return right
         return eval_prefix_expression(node.operator, right)
     if isinstance(node, InfixExpression):
-        left = eval(node.left)
+        left = eval(node.left, env)
         if is_error(left):
             return left
-        right = eval(node.right)
+        right = eval(node.right, env)
         if is_error(right):
             return right
         return eval_infix_expression(node.operator, left, right)
     if isinstance(node, IfExpression):
-        return eval_if_expression(node)
+        return eval_if_expression(node, env)
     if isinstance(node, IntegerLiteral):
         return IntegerObject(node.value)
     if isinstance(node, Boolean):
         return native_bool_to_boolean_object(node.value)
+    if isinstance(node, Identifier):
+        value = env.get(node.value)
+        if value is None:
+            return new_error("identifier not found: %s", node.value)
+        return value
     return None
 
 
-def eval_program(program):
+def eval_program(program, env):
     result = None
     for stmt in program.statements:
-        result = eval(stmt)
+        result = eval(stmt, env)
         if isinstance(result, ReturnObject):
             return result.value
         if isinstance(result, ErrorObject):
@@ -122,10 +145,10 @@ def eval_program(program):
     return result
 
 
-def eval_block_statement(block):
+def eval_block_statement(block, env):
     result = None
     for stmt in block.statements:
-        result = eval(stmt)
+        result = eval(stmt, env)
         if result is not None:
             if isinstance(result, ReturnObject) or isinstance(result, ErrorObject):
                 return result
@@ -211,14 +234,14 @@ def eval_integer_infix_expression(operator, left, right):
     return new_error('unknown operator: %s %s %s', get_type_name(left), operator, get_type_name(right))
 
 
-def eval_if_expression(node):
-    condition = eval(node.condition)
+def eval_if_expression(node, env):
+    condition = eval(node.condition, env)
     if is_error(condition):
         return condition
     if is_truthy(condition):
-        return eval(node.consequence)
+        return eval(node.consequence, env)
     elif node.alternative is not None:
-        return eval(node.alternative)
+        return eval(node.alternative, env)
     else:
         return NULL
 

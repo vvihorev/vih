@@ -85,13 +85,22 @@ def eval(node):
     if isinstance(node, BlockStatement):
         return eval_block_statement(node)
     if isinstance(node, ReturnStatement):
-        return ReturnObject(eval(node.return_value))
+        value = eval(node.return_value)
+        if is_error(value):
+            return value
+        return ReturnObject(value)
     if isinstance(node, PrefixExpression):
         right = eval(node.right)
+        if is_error(right):
+            return right
         return eval_prefix_expression(node.operator, right)
     if isinstance(node, InfixExpression):
         left = eval(node.left)
+        if is_error(left):
+            return left
         right = eval(node.right)
+        if is_error(right):
+            return right
         return eval_infix_expression(node.operator, left, right)
     if isinstance(node, IfExpression):
         return eval_if_expression(node)
@@ -204,6 +213,8 @@ def eval_integer_infix_expression(operator, left, right):
 
 def eval_if_expression(node):
     condition = eval(node.condition)
+    if is_error(condition):
+        return condition
     if is_truthy(condition):
         return eval(node.consequence)
     elif node.alternative is not None:
@@ -226,3 +237,8 @@ def new_error(format_string, *params):
     print(format_string % params)
     return ErrorObject(format_string % params)
 
+
+def is_error(obj):
+    if obj is not None:
+        return isinstance(obj, ErrorObject)
+    return False

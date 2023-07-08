@@ -72,9 +72,18 @@ def test_eval_boolean_expression(input, value):
 )
 def test_if_else_expression(input, value):
     evaluated = get_eval(input)
-    print("evaluated to:", evaluated)
     if value is not None:
         check_integer_object(evaluated, value)
     else:
         check_null_object(evaluated)
+
+
+@pytest.mark.parametrize(
+    'input,value', [
+        ('5 * 5; return 3; 9 * 9', 3),
+    ]
+)
+def test_return_statement(input, value):
+    evaluated = get_eval(input)
+    check_integer_object(evaluated, value)
 

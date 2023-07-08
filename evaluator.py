@@ -10,12 +10,14 @@ from parser import (
     IfExpression,
     IntegerLiteral,
     Boolean,
+    ReturnStatement,
 )
 
 
 class ObjectType(Enum):
     INTEGER = auto()
     BOOLEAN = auto()
+    RETURN_VALUE = auto()
     NULL = auto()
 
 
@@ -43,6 +45,15 @@ class BooleanObject(Object):
         return str(self.value).lower()
 
 
+class ReturnObject(Object):
+    def __init__(self, value):
+        super().__init__(ObjectType.RETURN_VALUE)
+        self.value = value
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+
 class NullObject(Object):
     def __init__(self):
         super().__init__(ObjectType.NULL)
@@ -64,6 +75,8 @@ def eval(node):
         return eval(node.expression)
     if isinstance(node, BlockStatement):
         return eval_statements(node.statements)
+    if isinstance(node, ReturnStatement):
+        return ReturnObject(eval(node.return_value))
     if isinstance(node, PrefixExpression):
         right = eval(node.right)
         return eval_prefix_expression(node.operator, right)
@@ -81,9 +94,11 @@ def eval(node):
 
 
 def eval_statements(statements):
-    last_stmt = NullObject()
+    last_stmt = None
     for stmt in statements:
         last_stmt = eval(stmt)
+        if isinstance(stmt, ReturnStatement):
+            return last_stmt.value
     return last_stmt
 
 

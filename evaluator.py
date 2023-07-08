@@ -5,6 +5,7 @@ from parser import (
     Program,
     ExpressionStatement,
     PrefixExpression,
+    InfixExpression,
     IntegerLiteral,
     Boolean,
 )
@@ -54,17 +55,22 @@ FALSE = BooleanObject(False)
 
 
 def eval(node):
+    print(node)
     print("evaluating:", type(node), node.token)
     if isinstance(node, Program):
         return eval_statements(node.statements)
-    elif isinstance(node, ExpressionStatement):
+    if isinstance(node, ExpressionStatement):
         return eval(node.expression)
-    elif isinstance(node, PrefixExpression):
+    if isinstance(node, PrefixExpression):
         right = eval(node.right)
         return eval_prefix_expression(node.operator, right)
-    elif isinstance(node, IntegerLiteral):
+    if isinstance(node, InfixExpression):
+        left = eval(node.left)
+        right = eval(node.right)
+        return eval_infix_expression(node.operator, left, right)
+    if isinstance(node, IntegerLiteral):
         return IntegerObject(node.value)
-    elif isinstance(node, Boolean):
+    if isinstance(node, Boolean):
         return native_bool_to_boolean_object(node.value)
     return None
 
@@ -84,6 +90,12 @@ def eval_prefix_expression(operator, right):
             return eval_minus_prefix_operator_expression(right)
         case _:
             return NULL
+
+
+def eval_infix_expression(operator, left, right):
+    if isinstance(left, IntegerObject) and isinstance(right, IntegerObject):
+        return eval_integer_infix_expression(operator, left, right)
+    return NULL
 
 
 def native_bool_to_boolean_object(value):
@@ -107,3 +119,16 @@ def eval_minus_prefix_operator_expression(right):
     if not isinstance(right, IntegerObject):
         return NULL
     return IntegerObject(-right.value)
+
+
+def eval_integer_infix_expression(operator, left, right):
+    match operator:
+        case '+':
+            return IntegerObject(left.value + right.value)
+        case '-':
+            return IntegerObject(left.value - right.value)
+        case '*':
+            return IntegerObject(left.value * right.value)
+        case '/':
+            return IntegerObject(int(left.value / right.value))
+

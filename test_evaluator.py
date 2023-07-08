@@ -24,6 +24,9 @@ def check_boolean_object(evaluated, expected_value):
         ('5', 5),
         ('-10', -10),
         ('-5', -5),
+        ('5 + 5 + 5 + 5 * 2', 25),
+        ('-5 + 5 / 5 + 5 * 2', 6),
+        ('-5 + 5 / (5 + 5) * 2', -5),
     ]
 )
 def test_eval_integer_expression(input, value):
@@ -35,15 +38,6 @@ def test_eval_integer_expression(input, value):
     'input,value', [
         ('True', True),
         ('False', False),
-    ]
-)
-def test_eval_boolean_expression(input, value):
-    evaluated = get_eval(input)
-    check_boolean_object(evaluated, value)
-
-
-@pytest.mark.parametrize(
-    'input,value', [
         ('!True', False),
         ('!False', True),
         ('!5', False),
@@ -51,8 +45,7 @@ def test_eval_boolean_expression(input, value):
         ('!!True', True),
     ]
 )
-def test_not_operator(input, value):
+def test_eval_boolean_expression(input, value):
     evaluated = get_eval(input)
-    
     check_boolean_object(evaluated, value)
 

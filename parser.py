@@ -255,7 +255,7 @@ class Parser:
             return None
         self.advance_tokens()
         stmt.value = self.parse_expression(Precedence.LOWEST)
-        while not (self._cur_token_is(TokenType.SEMICOLON) or self._cur_token_is(TokenType.EOF)):
+        if self._peek_token_is(TokenType.SEMICOLON):
             self.advance_tokens()
         return stmt
 
@@ -264,7 +264,7 @@ class Parser:
         self.advance_tokens()
 
         stmt.return_value = self.parse_expression(Precedence.LOWEST)
-        while not (self._cur_token_is(TokenType.SEMICOLON) or self._cur_token_is(TokenType.EOF)):
+        if self._peek_token_is(TokenType.SEMICOLON):
             self.advance_tokens()
         return stmt
 

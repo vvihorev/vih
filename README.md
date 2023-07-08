@@ -14,3 +14,7 @@ let a = 23;
 let b = 13
 max(a, b)
 ```
+
+```
+python3 vih.py sample_program.vih
+```

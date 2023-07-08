@@ -1,7 +1,15 @@
 import pytest
 
-from lexer import Lexer, TokenType, Token
-from parser import ExpressionStatement, Identifier, IntegerLiteral, Parser, PrefixExpression
+from lexer import Lexer, TokenType
+from parser import (
+    Parser,
+    Identifier,
+    IntegerLiteral,
+    ReturnStatement,
+    ExpressionStatement,
+    PrefixExpression,
+    InfixExpression,
+)
 
 
 def check_parser_errors(parser):
@@ -25,7 +33,7 @@ def check_integer_literal(node: IntegerLiteral, value: int):
 def test_pretty_printing():
     input_string = "let a = 3; return 45;"
     program = get_program(input_string)
-    expected_output = "let a = None; return None;"
+    expected_output = "let a = 3; return 45;"
     assert str(program) == expected_output
 
 
@@ -45,21 +53,22 @@ def test_let_statement():
         assert stmt.name.value == id
 
 
-def test_return_statement():
-    program = get_program("""
-    return x;
-    return 10;
-    """)
+@pytest.mark.parametrize(
+    'input,integer_value',
+    [
+        ('return 5;', 5),
+        ('return 15;', 15),
+    ]
+)
+def test_return_statement(input, integer_value):
+    program = get_program(input)
 
     assert program is not None
-    assert len(program.statements) == 2
+    assert len(program.statements) == 1
 
-    expected_tokens = [Token(TokenType.ID, 'x'), None]
-    for stmt, token in zip(program.statements, expected_tokens):
-        print(stmt)
-        assert stmt.token.token_type == TokenType.RETURN
-        if stmt.return_value:
-            assert stmt.return_value.token == token
+    for stmt in program.statements:
+        assert type(stmt) == ReturnStatement
+        check_integer_literal(stmt.return_value, integer_value)
 
 
 def test_identifier_expression():
@@ -104,3 +113,42 @@ def test_prefix_operators(input, operator, integer_value):
     assert prefix_expr.operator == operator
     check_integer_literal(prefix_expr.right, integer_value)
 
+
+@pytest.mark.parametrize(
+    'input,operator,lvalue,rvalue',
+    [
+        ('5 + 4;', '+', 5, 4),
+        ('15 - 3;', '-', 15, 3),
+        ('6 * 4;', '*', 6, 4),
+        ('15 / 3;', '/', 15, 3),
+        ('5 == 5;', '==', 5, 5),
+        ('5 != 5;', '!=', 5, 5),
+        ('5 < 5;', '<', 5, 5),
+        ('5 > 5;', '>', 5, 5),
+        ('5 <= 5;', '<=', 5, 5),
+        ('5 >= 5;', '>=', 5, 5),
+    ]
+)
+def test_single_infix_operators(input, operator, lvalue, rvalue):
+    program = get_program(input)
+
+    assert program is not None
+    assert len(program.statements) == 1
+    expr_stmt = program.statements[0]
+    assert type(expr_stmt) == ExpressionStatement
+    expr = expr_stmt.expression
+    assert type(expr) == InfixExpression
+    assert expr.operator == operator
+    check_integer_literal(expr.left, lvalue)
+    check_integer_literal(expr.right, rvalue)
+
+
+@pytest.mark.parametrize(
+    'input,output', [
+        ('2 * 3 - 4 / 2 * 4', '((2 * 3) - ((4 / 2) * 4));'),
+        ('2 - 1 * 3 == 4 / 2 * 4', '((2 - (1 * 3)) == ((4 / 2) * 4));'),
+    ]
+)
+def test_multiple_operations(input,output):
+    program = get_program(input)
+    assert str(program) == output

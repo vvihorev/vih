@@ -4,6 +4,7 @@ from lexer import Lexer, TokenType
 from parser import (
     Parser,
     Identifier,
+    Expression,
     IntegerLiteral,
     ReturnStatement,
     ExpressionStatement,
@@ -28,6 +29,26 @@ def check_integer_literal(node: IntegerLiteral, value: int):
     assert type(node) == IntegerLiteral
     assert node.token.token_type == TokenType.DIGIT
     assert node.value == value
+
+
+def check_identifier(node: Identifier, value: str):
+    assert type(node) == Identifier
+    assert node.token.literal == value
+    assert node.value == value
+
+
+def check_literal_expression(expr, expected_value):
+    if type(expected_value) == int:
+        check_integer_literal(expr, expected_value)
+    elif type(expected_value) == str:
+        check_literal_expression(expr, expected_value)
+    
+
+def check_infix_expression(expr, left, op, right):
+    assert type(expr) == InfixExpression
+    check_literal_expression(expr.left, left)
+    check_literal_expression(expr.right, right)
+    assert expr.operator == op
 
 
 def test_pretty_printing():
@@ -149,6 +170,7 @@ def test_single_infix_operators(input, operator, lvalue, rvalue):
         ('2 - 1 * 3 == 4 / 2 * 4', '((2 - (1 * 3)) == ((4 / 2) * 4));'),
     ]
 )
-def test_multiple_operations(input,output):
+def test_multiple_infix_operators(input,output):
     program = get_program(input)
     assert str(program) == output
+

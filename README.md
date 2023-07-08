@@ -11,8 +11,8 @@ let max = func(a, b) {
 }
 
 let a = 23;
-let b = 13
-max(a, b)
+let b = 13;
+max(a, b);
 ```
 
 ```

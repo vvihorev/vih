@@ -13,8 +13,8 @@ class TokenType(Enum):
     RCURLY = auto()
     SEMICOLON = auto()
     COMMA = auto()
-    EQUALS = auto()
 
+    EQUALS = auto()
     MINUS = auto()
     PLUS = auto()
     ASTERISK = auto()
@@ -130,11 +130,10 @@ class Lexer:
                 return Token(TokenType.EOF, '')
             case ch:
                 if ch.isdigit():
-                    token = Token(TokenType.DIGIT, self._match_digit())
+                    token = Token(TokenType.DIGIT, self._get_digit())
                 elif ch.isalpha() or ch == '_':
                     token = self._get_identifier()
                 else:
-                    # TODO: handle errors?
                     token = Token(TokenType.ILLEGAL, self.ch)
         self.position += 1
         return token
@@ -144,11 +143,16 @@ class Lexer:
             return self.input_string[self.position + 1]
         return ''
 
+    def _advance(self):
+        self.position += 1
+        if self.position < len(self.input_string):
+            self.ch = self.input_string[self.position]
+
     def _skip_whitespace(self) -> None:
         while self.ch.isspace() and self.position < len(self.input_string):
             self._advance()
 
-    def _match_digit(self) -> str:
+    def _get_digit(self) -> str:
         digit = []
         while self.ch.isdigit() and self.position < len(self.input_string):
             digit.append(self.ch)
@@ -167,9 +171,4 @@ class Lexer:
         if identifier in KEYWORDS:
             return Token(KEYWORDS[identifier], identifier)
         return Token(TokenType.ID, identifier)
-
-    def _advance(self):
-        self.position += 1
-        if self.position < len(self.input_string):
-            self.ch = self.input_string[self.position]
 

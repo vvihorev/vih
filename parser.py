@@ -185,9 +185,9 @@ class CallExpression(Expression):
 def trace(func):
     def wrapper(self, *args, **kwargs):
         if self.trace_parsing:
-            self._trace(func.__name__)
+            self._trace(f"<{func.__name__}: {self.cur_token}>")
             result = func(self, *args, **kwargs)
-            self._trace(func.__name__, end=True)
+            self._trace(f"</{func.__name__}>", end=True)
         else:
             result = func(self, *args, **kwargs)
         return result

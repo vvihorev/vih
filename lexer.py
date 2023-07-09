@@ -63,7 +63,7 @@ class Token:
         self.literal = literal
 
     def __str__(self):
-        return f"{{{self.token_type}:'{self.literal}'}}"
+        return f"{{{self.token_type.name}:'{self.literal}'}}"
 
 
 class Lexer:

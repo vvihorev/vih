@@ -19,9 +19,10 @@ from parser import (
 
 
 class Environment:
-    def __init__(self):
+    def __init__(self, trace_eval = False):
         self.store = {}
         self.outer: Optional[Environment] = None
+        self.trace_eval = trace_eval
 
     def get(self, identifier):
         value = self.store.get(identifier, None)
@@ -31,6 +32,21 @@ class Environment:
 
     def set(self, identifier, value):
         self.store[identifier] = value
+
+    def __str__(self):
+        items = []
+        for k, v in self.store.items():
+            if v.otype == ObjectType.FUNCTION:
+                v = v.compact_str()
+            items.append(f"{k}: {v}")
+        if self.outer is not None:
+            outer_items = []
+            for k, v in self.outer.store.items():
+                if v.otype == ObjectType.FUNCTION:
+                    v = v.compact_str()
+                outer_items.append(f"{k}: {v}")
+            return f"{{{', '.join(items)}}} outer: {{{', '.join(outer_items)}}}"
+        return f"{{{', '.join(items)}}}"
 
 
 class ObjectType(Enum):
@@ -85,6 +101,10 @@ class FunctionObject(Object):
     def __str__(self) -> str:
         params = ', '.join([str(p) for p in self.parameters])
         return f"func({params}) {{\n{self.body}\n}}"
+    
+    def compact_str(self):
+        params = ', '.join([str(p) for p in self.parameters])
+        return f"func({params})"
 
 
 class ErrorObject(Object):
@@ -110,7 +130,8 @@ FALSE = BooleanObject(False)
 
 
 def eval(node, env: Environment):
-    # print("evaluating:", type(node), node.token, "env:", env.store)
+    if env.trace_eval:
+        print("evaluating:", type(node), node.token, "env:", env)
     if isinstance(node, Program):
         return eval_program(node, env)
     if isinstance(node, ExpressionStatement):
@@ -337,7 +358,7 @@ def get_type_name(expr):
 
 
 def new_enclosed_environment(outer):
-    env = Environment()
+    env = Environment(outer.trace_eval)
     env.outer = outer
     return env
 

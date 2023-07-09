@@ -182,8 +182,20 @@ class CallExpression(Expression):
         return f"{self.function}({args})"
 
 
+def trace(func):
+    def wrapper(self, *args, **kwargs):
+        if self.trace_parsing:
+            self._trace(func.__name__)
+            result = func(self, *args, **kwargs)
+            self._trace(func.__name__, end=True)
+        else:
+            result = func(self, *args, **kwargs)
+        return result
+    return wrapper
+
+
 class Parser:
-    def __init__(self, lexer: Lexer):
+    def __init__(self, lexer: Lexer, trace_parsing=False):
         self.lexer: Lexer = lexer
         self.cur_token: Token = self.lexer.next_token()
         self.next_token: Token = self.lexer.next_token()
@@ -215,7 +227,10 @@ class Parser:
             TokenType.GEQ: self.parse_infix_expression,
             TokenType.LPAR: self.parse_call_expression,
         }
+        self.trace_parsing = trace_parsing
+        self.indent = 0
 
+    @trace
     def parse_program(self) -> Program:
         self.program = Program(self.cur_token)
         while not self._cur_token_is(TokenType.EOF):
@@ -225,6 +240,7 @@ class Parser:
             self.advance_tokens()
         return self.program
 
+    @trace
     def parse_statement(self):
         match self.cur_token.token_type:
             case TokenType.LET:
@@ -235,6 +251,7 @@ class Parser:
                 stmt = self.parse_expression_statement()
         return stmt
 
+    @trace
     def parse_let_statement(self) -> Optional[LetStatement]:
         stmt = LetStatement(self.cur_token)
         if not self._expect_peek(TokenType.ID):
@@ -249,6 +266,7 @@ class Parser:
             self.advance_tokens()
         return stmt
 
+    @trace
     def parse_return_statement(self):
         stmt = ReturnStatement(self.cur_token)
         self.advance_tokens()
@@ -258,6 +276,7 @@ class Parser:
             self.advance_tokens()
         return stmt
 
+    @trace
     def parse_block_statement(self) -> BlockStatement:
         if not self._cur_token_is(TokenType.LCURLY):
             self.errors.append("Expected '{' at the beginning of a block statement.")
@@ -272,6 +291,7 @@ class Parser:
             self.advance_tokens()
         return block_stmt
 
+    @trace
     def parse_expression_statement(self):
         stmt = ExpressionStatement(self.cur_token)
         stmt.expression = self.parse_expression(Precedence.LOWEST)
@@ -279,6 +299,7 @@ class Parser:
             self.advance_tokens()
         return stmt
 
+    @trace
     def parse_expression(self, precedence: Precedence):
         prefix = self.prefix_functions.get(self.cur_token.token_type, None)
         if prefix is None:
@@ -294,6 +315,7 @@ class Parser:
             left_exp = infix(left_exp)
         return left_exp
 
+    @trace
     def parse_prefix_expression(self):
         expr = PrefixExpression(self.cur_token)
         expr.operator = self.cur_token.literal
@@ -301,6 +323,7 @@ class Parser:
         expr.right = self.parse_expression(Precedence.PREFIX)
         return expr
 
+    @trace
     def parse_infix_expression(self, left_expr: Expression):
         expr = InfixExpression(self.cur_token)
         expr.left = left_expr
@@ -310,6 +333,7 @@ class Parser:
         expr.right = self.parse_expression(precedence)
         return expr
 
+    @trace
     def parse_grouped_expression(self):
         self.advance_tokens()
         expr = self.parse_expression(Precedence.LOWEST)
@@ -317,6 +341,7 @@ class Parser:
             return None
         return expr
 
+    @trace
     def parse_if_expression(self):
         expr = IfExpression(self.cur_token)
         if not self._expect_peek(TokenType.LPAR):
@@ -333,12 +358,14 @@ class Parser:
             expr.alternative = self.parse_block_statement()
         return expr
 
+    @trace
     def parse_call_expression(self, function):
         expr = CallExpression(self.cur_token)
         expr.function = function
         expr.arguments = self.parse_call_arguments()
         return expr
 
+    @trace
     def parse_call_arguments(self):
         args = []
         if self._peek_token_is(TokenType.RPAR):
@@ -356,12 +383,15 @@ class Parser:
             return None
         return args
 
+    @trace
     def parse_identifier(self):
         return Identifier(self.cur_token, self.cur_token.literal)
 
+    @trace
     def parse_integer_literal(self):
         return IntegerLiteral(self.cur_token, int(self.cur_token.literal))
 
+    @trace
     def parse_function_literal(self):
         expr = FunctionLiteral(self.cur_token)
         if not self._expect_peek(TokenType.LPAR):
@@ -374,6 +404,7 @@ class Parser:
         expr.body = self.parse_block_statement()
         return expr
 
+    @trace
     def parse_function_parameters(self):
         params = []
         if self._peek_token_is(TokenType.RPAR):
@@ -392,6 +423,7 @@ class Parser:
             return None
         return params
 
+    @trace
     def parse_boolean(self):
         value = True if self.cur_token.literal == 'true' else False
         return Boolean(self.cur_token, value)
@@ -428,4 +460,13 @@ class Parser:
         if precedence is not None:
             return precedence
         return Precedence.LOWEST
+
+    def _trace(self, block_name, end=False):
+        if not self.trace_parsing:
+            return
+        if end:
+            self.indent -= 4
+        print(f"{' '*self.indent}{block_name}")
+        if not end:
+            self.indent += 4
 

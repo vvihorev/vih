@@ -13,6 +13,7 @@ class TokenType(Enum):
     RCURLY = auto()
     SEMICOLON = auto()
     COMMA = auto()
+    STRING = auto()
 
     EQUALS = auto()
     MINUS = auto()
@@ -102,6 +103,13 @@ class Lexer:
                 token = Token(TokenType.ASTERISK, self.ch)
             case '/':
                 token = Token(TokenType.DIV, self.ch)
+            case '"':
+                string_literal = []
+                self._advance()
+                while self.ch != '"' and self.position < len(self.input_string):
+                    string_literal.append(self.ch)
+                    self._advance()
+                token = Token(TokenType.STRING, ''.join(string_literal))
             case '=':
                 if self._peek() == '=':
                     token = Token(TokenType.EQ, self.ch + '=')

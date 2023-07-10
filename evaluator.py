@@ -13,6 +13,7 @@ from parser import (
     CallExpression,
     IfExpression,
     IntegerLiteral,
+    StringLiteral,
     FunctionLiteral,
     Boolean,
     Identifier,
@@ -59,6 +60,7 @@ class ObjectType(Enum):
     BOOLEAN = auto()
     RETURN_VALUE = auto()
     FUNCTION = auto()
+    STRING = auto()
     ERROR = auto()
     NULL = auto()
 
@@ -75,12 +77,21 @@ class IntegerObject(Object):
         self.value = value
 
     def __str__(self) -> str:
-        return str(self.value)
+        return f'"self.value"'
 
 
 class BooleanObject(Object):
     def __init__(self, value):
         super().__init__(ObjectType.BOOLEAN)
+        self.value = value
+
+    def __str__(self) -> str:
+        return str(self.value).lower()
+
+
+class StringObject(Object):
+    def __init__(self, value):
+        super().__init__(ObjectType.STRING)
         self.value = value
 
     def __str__(self) -> str:
@@ -172,6 +183,8 @@ def eval(node, env: Environment):
         return eval_if_expression(node, env)
     if isinstance(node, IntegerLiteral):
         return IntegerObject(node.value)
+    if isinstance(node, StringLiteral):
+        return StringObject(node.value)
     if isinstance(node, Boolean):
         return native_bool_to_boolean_object(node.value)
     if isinstance(node, Identifier):

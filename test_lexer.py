@@ -187,3 +187,18 @@ def test_trailing_whitespace():
     assert token
     token = lex.next_token()
 
+
+@mark.parametrize(
+    'cs,ts', [
+        (
+            '"hello"', (TokenType.STRING, 'hello'),
+        )
+    ]
+)
+def test_next_token(cs, ts):
+    lex = Lexer(cs)
+    token = lex.next_token()
+    assert token.token_type == ts[0]
+    assert token.literal == ts[1]
+    assert lex.next_token().token_type == TokenType.EOF
+

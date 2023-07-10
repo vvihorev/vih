@@ -19,6 +19,11 @@ def check_boolean_object(evaluated, expected_value):
     assert evaluated.value == expected_value
 
 
+def check_string_object(evaluated, expected_value):
+    assert evaluated.otype == ObjectType.STRING
+    assert evaluated.value == expected_value
+
+
 def check_null_object(evaluated):
     print(evaluated, dir(evaluated), evaluated.otype)
     assert evaluated.otype == ObjectType.NULL
@@ -58,6 +63,17 @@ def test_eval_integer_expression(input, value):
 def test_eval_boolean_expression(input, value):
     evaluated = get_eval(input)
     check_boolean_object(evaluated, value)
+
+
+@pytest.mark.parametrize(
+    'input,value', [
+        ('""', ""),
+        ('"Hello!"', "Hello!"),
+    ]
+)
+def test_eval_string_expression(input, value):
+    evaluated = get_eval(input)
+    check_string_object(evaluated, value)
 
 
 @pytest.mark.parametrize(

@@ -15,6 +15,7 @@ from parser import (
     InfixExpression,
     IfExpression,
     CallExpression,
+    StringLiteral,
 )
 
 
@@ -32,6 +33,11 @@ def get_program(input_string):
 
 def check_integer_literal(node: IntegerLiteral, value: int):
     assert node.token.token_type == TokenType.DIGIT
+    assert node.value == value
+
+
+def check_string_literal(node: StringLiteral, value: str):
+    assert node.token.token_type == TokenType.STRING
     assert node.value == value
 
 
@@ -143,6 +149,17 @@ def test_integer_literal_expression():
     assert type(expr_stmt) == ExpressionStatement
     integer_literal = expr_stmt.expression
     check_integer_literal(integer_literal, 534)
+
+
+def test_string_literal_expression():
+    program = get_program('"hello";')
+
+    assert program is not None
+    assert len(program.statements) == 1
+    expr_stmt = program.statements[0]
+    assert type(expr_stmt) == ExpressionStatement
+    string_literal = expr_stmt.expression
+    check_string_literal(string_literal, 'hello')
 
 
 def test_boolean_expression():

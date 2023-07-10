@@ -138,6 +138,15 @@ class Boolean(Expression):
         return f"{self.value}"
 
 
+class StringLiteral(Expression):
+    def __init__(self, token, value: str):
+        super().__init__(token)
+        self.value: str = value
+
+    def __str__(self):
+        return f'"{self.value}"'
+
+
 class FunctionLiteral(Expression):
     def __init__(self, token):
         super().__init__(token)
@@ -231,6 +240,7 @@ class Parser:
             TokenType.MINUS: self.parse_prefix_expression,
             TokenType.LPAR: self.parse_grouped_expression,
             TokenType.IF: self.parse_if_expression,
+            TokenType.STRING: self.parse_string,
         }
         self.infix_functions = {
             TokenType.PLUS: self.parse_infix_expression,
@@ -446,6 +456,10 @@ class Parser:
     def parse_boolean(self):
         value = True if self.cur_token.literal == 'true' else False
         return Boolean(self.cur_token, value)
+
+    @trace
+    def parse_string(self):
+        return StringLiteral(self.cur_token, self.cur_token.literal)
 
     @trace
     def parse_function_literal(self):

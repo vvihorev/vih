@@ -294,6 +294,8 @@ def eval_infix_expression(operator, left, right):
     if isinstance(left, IntegerObject) and isinstance(right, IntegerObject):
         return eval_integer_infix_expression(operator, left, right)
     if isinstance(left, StringObject) and isinstance(right, StringObject):
+        if operator != '+':
+            return new_error('unknown operator: STRING %s STRING', operator)
         return StringObject(left.value + right.value)
     match operator:
         case '<':

@@ -135,6 +135,7 @@ def test_nested_block_statements():
         ('5 + true; 5;', 'type mismatch: INTEGER + BOOLEAN'),
         ('-true;', 'unknown operator: -BOOLEAN'),
         ('false + true; 5;', 'unknown operator: BOOLEAN + BOOLEAN'),
+        ('"hello" - "world"; 5;', 'unknown operator: STRING - STRING'),
         ('a;', 'identifier not found: a'),
         ('for (i=0;i<5;let i=i+1) {a;}', 'identifier not found: a'),
         ('for (i=0;a;let i=i+1) {a;}', 'identifier not found: a'),

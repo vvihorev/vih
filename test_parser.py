@@ -9,6 +9,7 @@ from parser import (
     Boolean,
     ReturnStatement,
     BlockStatement,
+    ForStatement,
     ExpressionStatement,
     PrefixExpression,
     InfixExpression,
@@ -101,6 +102,24 @@ def test_return_statement(input, integer_value):
     for stmt in program.statements:
         assert type(stmt) == ReturnStatement
         check_integer_literal(stmt.return_value, integer_value)
+
+
+def test_for_statement():
+    program = get_program("""
+    let prod = 1;
+    for (i = 1; i <= 5; let i = i + 1) {
+        let prod = prod * i;
+    }
+    prod;
+    """)
+    assert program is not None
+    assert len(program.statements) == 3
+    for_stmt = program.statements[1]
+    assert type(for_stmt) == ForStatement
+    assert for_stmt.counter.value == 'i'
+    check_integer_literal(for_stmt.initial_value, 1)
+    assert str(for_stmt.condition) == '(i <= 5)'
+    assert str(for_stmt.update_rule) == 'let i = (i + 1);'
 
 
 def test_identifier_expression():

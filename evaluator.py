@@ -6,6 +6,8 @@ from parser import (
     ExpressionStatement,
     BlockStatement,
     LetStatement,
+    ReturnStatement,
+    ForStatement,
     PrefixExpression,
     InfixExpression,
     CallExpression,
@@ -13,7 +15,6 @@ from parser import (
     IntegerLiteral,
     FunctionLiteral,
     Boolean,
-    ReturnStatement,
     Identifier,
 )
 
@@ -32,6 +33,10 @@ class Environment:
 
     def set(self, identifier, value):
         self.store[identifier] = value
+
+    def unset(self, identifier):
+        if identifier in self.store:
+            del self.store[identifier]
 
     def __str__(self):
         items = []
@@ -143,6 +148,8 @@ def eval(node, env: Environment):
         if is_error(value):
             return value
         return ReturnObject(value)
+    if isinstance(node, ForStatement):
+        return eval_for_statement(node, env)
     if isinstance(node, LetStatement):
         value = eval(node.value, env)
         if is_error(value):
@@ -208,6 +215,21 @@ def eval_block_statement(block, env):
     return result
 
 
+def eval_for_statement(stmt: ForStatement, env):
+    initial_value = eval(stmt.initial_value, env)
+    if is_error(initial_value):
+        return initial_value
+    env.set(stmt.counter.value, initial_value)
+    condition = eval(stmt.condition, env)
+    if is_error(condition):
+        return condition
+    while is_truthy(eval(stmt.condition, env)):
+        evaluated = eval_block_statement(stmt.body, env)
+        if is_error(evaluated):
+            return evaluated
+        eval(stmt.update_rule, env)
+
+
 def eval_expressions(expressions, env):
     result = []
     for expr in expressions:
@@ -239,7 +261,7 @@ def unwrap_return_value(obj):
     return obj
 
 
-def new_enclosed_environment(outer):
+def new_enclosed_environment(outer: Environment):
     env = Environment(outer.trace_eval)
     env.outer = outer
     return env

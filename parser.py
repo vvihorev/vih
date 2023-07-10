@@ -89,6 +89,19 @@ class ReturnStatement(Statement):
         return f"{self.token.literal} {self.return_value};"
 
 
+class ForStatement(Statement):
+    def __init__(self, token):
+        super().__init__(token)
+        self.counter: Identifier
+        self.initial_value: Optional[Expression]
+        self.condition: Optional[Expression]
+        self.update_rule: Optional[LetStatement]
+        self.body: BlockStatement
+
+    def __str__(self):
+        return f"for({self.counter.value}, {self.condition}, {self.update_rule})"
+
+
 class BlockStatement(Statement):
     def __init__(self, token):
         super().__init__(token)
@@ -252,6 +265,8 @@ class Parser:
                 stmt = self.parse_let_statement()
             case TokenType.RETURN:
                 stmt = self.parse_return_statement()
+            case TokenType.FOR:
+                stmt = self.parse_for_statement()
             case _:
                 stmt = self.parse_expression_statement()
         return stmt
@@ -279,6 +294,37 @@ class Parser:
         stmt.return_value = self.parse_expression(Precedence.LOWEST)
         if self._peek_token_is(TokenType.SEMICOLON):
             self.advance_tokens()
+        return stmt
+    
+    @trace
+    def parse_for_statement(self):
+        stmt = ForStatement(self.cur_token)
+        if not self._expect_peek(TokenType.LPAR):
+            return None
+        if not self._expect_peek(TokenType.ID):
+            return None
+        stmt.counter = self.parse_identifier()
+        if not self._expect_peek(TokenType.EQUALS):
+            return None
+        self.advance_tokens()
+        stmt.initial_value = self.parse_expression(Precedence.LOWEST)
+        self.advance_tokens()
+        self.advance_tokens()
+        stmt.condition = self.parse_expression(Precedence.LOWEST)
+        if stmt.condition is None:
+            self.errors.append("Couldn't parse condition of the for loop")
+            return None
+        self.advance_tokens()
+        self.advance_tokens()
+        stmt.update_rule = self.parse_let_statement()
+        if stmt.update_rule is None:
+            self.errors.append("Couldn't parse update rule of the for loop")
+            return None
+        if not self._expect_peek(TokenType.RPAR):
+            return None
+        if not self._expect_peek(TokenType.LCURLY):
+            return None
+        stmt.body = self.parse_block_statement()
         return stmt
 
     @trace

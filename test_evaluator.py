@@ -110,6 +110,8 @@ def test_nested_block_statements():
         ('-true;', 'unknown operator: -BOOLEAN'),
         ('false + true; 5;', 'unknown operator: BOOLEAN + BOOLEAN'),
         ('a;', 'identifier not found: a'),
+        ('for (i=0;i<5;let i=i+1) {a;}', 'identifier not found: a'),
+        ('for (i=0;a;let i=i+1) {a;}', 'identifier not found: a'),
     ]
 )
 def test_error_handling(input, expected_message):
@@ -127,6 +129,21 @@ def test_error_handling(input, expected_message):
     ]
 )
 def test_let_statement(input, expected_value):
+    check_integer_object(get_eval(input), expected_value)
+
+
+@pytest.mark.parametrize(
+    'input,expected_value', [
+        ('''
+            let prod = 1;
+            for (i = 1; i <= 5; let i = i + 1) {
+                let prod = prod * i;
+            }
+            prod;
+         ''', 120),
+    ]
+)
+def test_for_statement(input, expected_value):
     check_integer_object(get_eval(input), expected_value)
 
 

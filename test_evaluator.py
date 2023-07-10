@@ -78,6 +78,16 @@ def test_eval_string_expression(input, value):
 
 @pytest.mark.parametrize(
     'input,value', [
+        ('"Hello" + " " + "world!', "Hello world!"),
+    ]
+)
+def test_eval_string_concatenation(input, value):
+    evaluated = get_eval(input)
+    check_string_object(evaluated, value)
+
+
+@pytest.mark.parametrize(
+    'input,value', [
         ('if (true) { 10 }', 10),
         ('if (false) { 10 }', None),
         ('if (1) { 10 }', 10),

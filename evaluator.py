@@ -90,9 +90,9 @@ class BooleanObject(Object):
 
 
 class StringObject(Object):
-    def __init__(self, value):
+    def __init__(self, value: str):
         super().__init__(ObjectType.STRING)
-        self.value = value
+        self.value: str = value
 
     def __str__(self) -> str:
         return str(self.value).lower()
@@ -293,6 +293,8 @@ def eval_prefix_expression(operator, right):
 def eval_infix_expression(operator, left, right):
     if isinstance(left, IntegerObject) and isinstance(right, IntegerObject):
         return eval_integer_infix_expression(operator, left, right)
+    if isinstance(left, StringObject) and isinstance(right, StringObject):
+        return StringObject(left.value + right.value)
     match operator:
         case '<':
             return native_bool_to_boolean_object(left.value < right.value)

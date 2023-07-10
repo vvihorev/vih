@@ -34,28 +34,28 @@ PRECEDENCES = {
 
 
 class Node(ABC):
-    def __init__(self):
-        pass
-    
+    def __init__(self, token: Token):
+        self.token = token
+
     @abstractmethod
     def __str__(self):
         pass
 
 
-class Statement(Node):
+class Statement(Node, ABC):
     def __init__(self, token):
-        self.token = token
+        super().__init__(token)
 
 
-class Expression(Node):
+class Expression(Node, ABC):
     def __init__(self, token):
-        self.token = token
+        super().__init__(token)
 
 
 class Program(Node):
     def __init__(self, token):
-        self.token = token
-        self.statements = []
+        super().__init__(token)
+        self.statements: List[Statement] = []
 
     def __str__(self):
         return ' '.join([str(stmt) for stmt in self.statements])
@@ -64,8 +64,7 @@ class Program(Node):
 class ExpressionStatement(Statement):
     def __init__(self, token):
         super().__init__(token)
-        # TODO: supply nodes with everything on creation?
-        self.expression: Optional[Expression] = None
+        self.expression: Optional[Expression]
 
     def __str__(self):
         return f"{self.expression};"
@@ -74,8 +73,8 @@ class ExpressionStatement(Statement):
 class LetStatement(Statement):
     def __init__(self, token):
         super().__init__(token)
-        self.name: Optional[Identifier] = None
-        self.value: Optional[Expression] = None
+        self.name: Identifier
+        self.value: Optional[Expression]
 
     def __str__(self):
         return f"{self.token.literal} {self.name} = {self.value};"
@@ -84,7 +83,7 @@ class LetStatement(Statement):
 class ReturnStatement(Statement):
     def __init__(self, token):
         super().__init__(token)
-        self.return_value: Optional[Expression] = None
+        self.return_value: Optional[Expression]
 
     def __str__(self):
         return f"{self.token.literal} {self.return_value};"
@@ -100,7 +99,7 @@ class BlockStatement(Statement):
 
 
 class Identifier(Expression):
-    def __init__(self, token, value):
+    def __init__(self, token, value: str):
         super().__init__(token)
         self.value: str = value
 
@@ -109,9 +108,18 @@ class Identifier(Expression):
 
 
 class IntegerLiteral(Expression):
-    def __init__(self, token, value):
+    def __init__(self, token, value: int):
         super().__init__(token)
         self.value: int = value
+
+    def __str__(self):
+        return f"{self.value}"
+
+
+class Boolean(Expression):
+    def __init__(self, token, value: bool):
+        super().__init__(token)
+        self.value: bool = value
 
     def __str__(self):
         return f"{self.value}"
@@ -120,28 +128,22 @@ class IntegerLiteral(Expression):
 class FunctionLiteral(Expression):
     def __init__(self, token):
         super().__init__(token)
-        self.parameters: List[Identifier] = []
-        self.body: Optional[BlockStatement] = None
+        self.parameters: List[Identifier] | None = []
+        self.body: BlockStatement
 
     def __str__(self):
-        params = ', '.join([str(p) for p in self.parameters])
+        if not self.parameters:
+            params = "ERROR"
+        else:
+            params = ', '.join([str(p) for p in self.parameters])
         return f"func({params}) {self.body}"
-
-
-class Boolean(Expression):
-    def __init__(self, token, value):
-        super().__init__(token)
-        self.value: bool = value
-
-    def __str__(self):
-        return f"{self.value}"
 
 
 class PrefixExpression(Expression):
     def __init__(self, token):
         super().__init__(token)
-        self.operator: str = ''
-        self.right: Optional[Expression] = None
+        self.operator: str
+        self.right: Optional[Expression]
 
     def __str__(self):
         return f"({self.operator}{self.right})"
@@ -150,9 +152,9 @@ class PrefixExpression(Expression):
 class InfixExpression(Expression):
     def __init__(self, token):
         super().__init__(token)
-        self.left: Optional[Expression] = None
-        self.operator: str = ''
-        self.right: Optional[Expression] = None
+        self.left: Optional[Expression]
+        self.operator: str
+        self.right: Optional[Expression]
 
     def __str__(self):
         return f"({self.left} {self.operator} {self.right})"
@@ -161,8 +163,8 @@ class InfixExpression(Expression):
 class IfExpression(Expression):
     def __init__(self, token):
         super().__init__(token)
-        self.condition: Optional[Expression] = None
-        self.consequence: Optional[BlockStatement] = None
+        self.condition: Optional[Expression]
+        self.consequence: BlockStatement
         self.alternative: Optional[BlockStatement] = None
 
     def __str__(self):
@@ -174,11 +176,14 @@ class IfExpression(Expression):
 class CallExpression(Expression):
     def __init__(self, token):
         super().__init__(token)
-        self.function: Optional[Expression] = None
-        self.arguments: List[Expression] = []
+        self.function: Optional[Expression]
+        self.arguments: List[Expression] | None = []
 
     def __str__(self):
-        args = ', '.join([str(a) for a in self.arguments])
+        if not self.arguments:
+            args = "ERROR"
+        else:
+            args = ', '.join([str(a) for a in self.arguments])
         return f"{self.function}({args})"
 
 
@@ -200,8 +205,8 @@ class Parser:
         self.cur_token: Token = self.lexer.next_token()
         self.next_token: Token = self.lexer.next_token()
 
-        self.errors = []
-        self.program = None
+        self.errors: List[str] = []
+        self.program: Program
         
         self.prefix_functions = {
             TokenType.ID: self.parse_identifier,
@@ -227,7 +232,7 @@ class Parser:
             TokenType.GEQ: self.parse_infix_expression,
             TokenType.LPAR: self.parse_call_expression,
         }
-        self.trace_parsing = trace_parsing
+        self.trace_parsing: bool = trace_parsing
         self.indent = 0
 
     @trace
@@ -300,7 +305,7 @@ class Parser:
         return stmt
 
     @trace
-    def parse_expression(self, precedence: Precedence):
+    def parse_expression(self, precedence: Precedence) -> Expression | None:
         prefix = self.prefix_functions.get(self.cur_token.token_type, None)
         if prefix is None:
             self.errors.append(f"No prefix parser function for {self.cur_token}")
@@ -392,6 +397,11 @@ class Parser:
         return IntegerLiteral(self.cur_token, int(self.cur_token.literal))
 
     @trace
+    def parse_boolean(self):
+        value = True if self.cur_token.literal == 'true' else False
+        return Boolean(self.cur_token, value)
+
+    @trace
     def parse_function_literal(self):
         expr = FunctionLiteral(self.cur_token)
         if not self._expect_peek(TokenType.LPAR):
@@ -423,11 +433,6 @@ class Parser:
             return None
         return params
 
-    @trace
-    def parse_boolean(self):
-        value = True if self.cur_token.literal == 'true' else False
-        return Boolean(self.cur_token, value)
-
     def advance_tokens(self) -> None:
         self.cur_token = self.next_token
         self.next_token = self.lexer.next_token()
@@ -435,8 +440,23 @@ class Parser:
     def _cur_token_is(self, tt: TokenType):
         return self.cur_token.token_type == tt
 
+    def _cur_precedence(self):
+        precedence = PRECEDENCES.get(self.cur_token.token_type, None)
+        if precedence is not None:
+            return precedence
+        return Precedence.LOWEST
+
     def _peek_token_is(self, tt: TokenType):
         return self.next_token.token_type == tt
+
+    def _peek_precedence(self):
+        precedence = PRECEDENCES.get(self.next_token.token_type, None)
+        if precedence is not None:
+            return precedence
+        return Precedence.LOWEST
+
+    def _peek_error(self, tt):
+        self.errors.append(f"Expected next token to be {tt}, got {self.next_token.token_type}.")
 
     def _expect_peek(self, tt: TokenType):
         if self._peek_token_is(tt):
@@ -445,21 +465,6 @@ class Parser:
         else:
             self._peek_error(tt)
             return False
-
-    def _peek_error(self, tt):
-        self.errors.append(f"Expected next token to be {tt}, got {self.next_token.token_type}.")
-
-    def _cur_precedence(self):
-        precedence = PRECEDENCES.get(self.cur_token.token_type, None)
-        if precedence is not None:
-            return precedence
-        return Precedence.LOWEST
-
-    def _peek_precedence(self):
-        precedence = PRECEDENCES.get(self.next_token.token_type, None)
-        if precedence is not None:
-            return precedence
-        return Precedence.LOWEST
 
     def _trace(self, block_name, end=False):
         if not self.trace_parsing:

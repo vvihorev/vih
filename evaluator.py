@@ -19,7 +19,7 @@ from parser import (
 
 
 class Environment:
-    def __init__(self, trace_eval = False):
+    def __init__(self, trace_eval=False):
         self.store = {}
         self.outer: Optional[Environment] = None
         self.trace_eval = trace_eval
@@ -239,6 +239,12 @@ def unwrap_return_value(obj):
     return obj
 
 
+def new_enclosed_environment(outer):
+    env = Environment(outer.trace_eval)
+    env.outer = outer
+    return env
+
+
 def eval_prefix_expression(operator, right):
     match operator:
         case '!':
@@ -270,29 +276,6 @@ def eval_infix_expression(operator, left, right):
     return new_error('unknown operator: %s %s %s', get_type_name(left), operator, get_type_name(right))
 
 
-def native_bool_to_boolean_object(value):
-    if value:
-        return TRUE
-    return FALSE
-
-
-def eval_not_operator_expression(right):
-    if right == TRUE:
-        return FALSE
-    elif right == FALSE:
-        return TRUE
-    elif right == NULL:
-        return TRUE
-    else:
-        return FALSE
-
-
-def eval_minus_prefix_operator_expression(right):
-    if not isinstance(right, IntegerObject):
-        return new_error('unknown operator: -%s', get_type_name(right))
-    return IntegerObject(-right.value)
-
-
 def eval_integer_infix_expression(operator, left, right):
     match operator:
         case '+':
@@ -316,6 +299,31 @@ def eval_integer_infix_expression(operator, left, right):
         case '!=':
             return native_bool_to_boolean_object(int(left.value != right.value))
     return new_error('unknown operator: %s %s %s', get_type_name(left), operator, get_type_name(right))
+
+
+def native_bool_to_boolean_object(value):
+    if value:
+        return TRUE
+    return FALSE
+
+
+def eval_not_operator_expression(right):
+    if right == TRUE:
+        return FALSE
+    elif right == FALSE:
+        return TRUE
+    elif right == NULL:
+        return TRUE
+    else:
+        return FALSE
+
+
+def eval_minus_prefix_operator_expression(right):
+    if not isinstance(right, IntegerObject):
+        return new_error('unknown operator: -%s', get_type_name(right))
+    if right.value is None:
+        return new_error('integer value is null in: -%s', get_type_name(right))
+    return IntegerObject(-right.value)
 
 
 def eval_if_expression(node, env):
@@ -355,10 +363,4 @@ def get_type_name(expr):
         return expr.otype.name
     except AttributeError:
         return None
-
-
-def new_enclosed_environment(outer):
-    env = Environment(outer.trace_eval)
-    env.outer = outer
-    return env
 

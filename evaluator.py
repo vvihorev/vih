@@ -25,6 +25,9 @@ from parser import (
 class Environment:
     def __init__(self, trace_eval=False):
         self.store = {}
+        self.builtin = {
+            "len": BuiltinObject(builtin_len),
+        }
         self.outer: Optional[Environment] = None
         self.trace_eval = trace_eval
 
@@ -62,6 +65,7 @@ class ObjectType(Enum):
     BOOLEAN = auto()
     RETURN_VALUE = auto()
     FUNCTION = auto()
+    BUILTIN = auto()
     LIST = auto()
     STRING = auto()
     ERROR = auto()
@@ -77,7 +81,7 @@ class Object:
 class IntegerObject(Object):
     def __init__(self, value):
         super().__init__(ObjectType.INTEGER)
-        self.value = value
+        self.value: int = value
 
     def __str__(self) -> str:
         return f'{self.value}'
@@ -124,6 +128,15 @@ class FunctionObject(Object):
     def compact_str(self):
         params = ', '.join([str(p) for p in self.parameters])
         return f"func({params})"
+
+
+class BuiltinObject(Object):
+    def __init__(self, fn):
+        super().__init__(ObjectType.BUILTIN)
+        self.fn = fn
+
+    def __str__(self) -> str:
+        return f"builtin function"
 
 
 class ListObject(Object):
@@ -207,9 +220,12 @@ def eval(node, env: Environment):
         return native_bool_to_boolean_object(node.value)
     if isinstance(node, Identifier):
         value = env.get(node.value)
-        if value is None:
-            return new_error("identifier not found: %s", node.value)
-        return value
+        if value is not None:
+            return value
+        value = env.builtin.get(node.value, None)
+        if value is not None:
+            return value
+        return new_error("identifier not found: %s", node.value)
     if isinstance(node, FunctionLiteral):
         params = node.parameters
         body = node.body
@@ -286,11 +302,13 @@ def eval_expressions(expressions, env):
 
 
 def apply_function(function, args):
-    if not isinstance(function, FunctionObject):
-        return new_error("not a function: %s", get_type_name(function))
-    extended_env = extend_function_env(function, args)
-    evaluated = eval(function.body, extended_env)
-    return unwrap_return_value(evaluated)
+    if isinstance(function, BuiltinObject):
+        return function.fn(*args)
+    if isinstance(function, FunctionObject):
+        extended_env = extend_function_env(function, args)
+        evaluated = eval(function.body, extended_env)
+        return unwrap_return_value(evaluated)
+    return new_error("not a function: %s", get_type_name(function))
 
 
 def extend_function_env(function, args):
@@ -434,4 +452,12 @@ def get_type_name(expr):
         return expr.otype.name
     except AttributeError:
         return None
+
+
+def builtin_len(*args):
+    if len(args) != 1:
+        return ErrorObject('Builtin function len expected one argument')
+    if isinstance(args[0], StringObject):
+        return IntegerObject(len(args[0].value))
+    return ErrorObject('Builtin function len expected type String or List')
 

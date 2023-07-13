@@ -77,7 +77,7 @@ class IntegerObject(Object):
         self.value = value
 
     def __str__(self) -> str:
-        return f'"self.value"'
+        return f'{self.value}'
 
 
 class BooleanObject(Object):

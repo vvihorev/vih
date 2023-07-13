@@ -492,7 +492,7 @@ def builtin_last(*args):
     if isinstance(args[0], ListObject):
         if len(args[0].elements) < 1:
             return ErrorObject('List is empty')
-        return ListObject([args[0].elements[-1]])
+        return args[0].elements[-1]
     return ErrorObject('Builtin function last expected type List')
 
 

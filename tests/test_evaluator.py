@@ -10,23 +10,23 @@ def get_eval(input):
 
 
 def check_integer_object(evaluated, expected_value):
-    assert evaluated.otype == ObjectType.INTEGER
+    assert evaluated.otype == ObjectType.INTEGER, str(evaluated)
     assert evaluated.value == expected_value
 
 
 def check_boolean_object(evaluated, expected_value):
-    assert evaluated.otype == ObjectType.BOOLEAN
+    assert evaluated.otype == ObjectType.BOOLEAN, str(evaluated)
     assert evaluated.value == expected_value
 
 
 def check_string_object(evaluated, expected_value):
-    assert evaluated.otype == ObjectType.STRING
+    assert evaluated.otype == ObjectType.STRING, str(evaluated)
     assert evaluated.value == expected_value
 
 
 def check_null_object(evaluated):
     print(evaluated, dir(evaluated), evaluated.otype)
-    assert evaluated.otype == ObjectType.NULL
+    assert evaluated.otype == ObjectType.NULL, str(evaluated)
 
 
 @pytest.mark.parametrize(
@@ -144,6 +144,8 @@ def test_nested_block_statements():
         ('len(0)', 'Builtin function len expected type String or List'),
         ('len("asd", "asd")', 'Builtin function len expected one argument'),
         ('len()', 'Builtin function len expected one argument'),
+        ('first([])', 'List is empty'),
+        ('last([])', 'List is empty'),
     ]
 )
 def test_error_handling(input, expected_message):
@@ -217,9 +219,22 @@ def test_list_operations(input, expected_value):
         ('len("")', 0),
         ('len("hello")', 5),
         ('len("hello world")', 11),
+        ('first([1, 2])', 1),
+        ('last([1, 2])', 2),
     ]
 )
 def test_builtin_functions(input, expected_value):
     evaluated = get_eval(input)
     check_integer_object(evaluated, expected_value)
+
+
+@pytest.mark.parametrize(
+    'input,expected_string', [
+        ('rest([1, 2])', '[2]'),
+        ('push(3, [1, 2])', '[1, 2, 3]'),
+    ]
+)
+def test_builtin_functions_printed(input, expected_string):
+    evaluated = get_eval(input)
+    assert str(evaluated) == expected_string
 

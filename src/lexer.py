@@ -108,7 +108,7 @@ class Lexer:
                     while self.ch != '\n' and self.position < len(self.input_string):
                         comment.append(self.ch)
                         self._advance()
-                    token = Token(TokenType.COMMENT, comment)
+                    token = Token(TokenType.COMMENT, ''.join(comment))
                 else:
                     token = Token(TokenType.DIV, self.ch)
             case '"':

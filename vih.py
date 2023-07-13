@@ -21,7 +21,6 @@ match option:
         with open(file, 'r') as f:
             lines = f.readlines()
         for line in lines:
-            line = line.replace('\n', '')
             lex = Lexer(line)
             token = lex.next_token()
             while token.token_type != TokenType.EOF:
@@ -42,7 +41,6 @@ match option:
 
 with open(file, 'r') as f:
     input_string = f.read()
-input_string = input_string.replace('\n', '')
 
 env = Environment(trace_eval=trace_eval)
 lex = Lexer(input_string)

@@ -4,6 +4,7 @@ from enum import Enum, auto
 class TokenType(Enum):
     # Characters
     EOF = auto()
+    COMMENT = auto()
     ILLEGAL = auto()
     LPAR = auto()
     RPAR = auto()
@@ -102,7 +103,14 @@ class Lexer:
             case '*':
                 token = Token(TokenType.ASTERISK, self.ch)
             case '/':
-                token = Token(TokenType.DIV, self.ch)
+                if self._peek() == '/':
+                    comment = []
+                    while self.ch != '\n' and self.position < len(self.input_string):
+                        comment.append(self.ch)
+                        self._advance()
+                    token = Token(TokenType.COMMENT, comment)
+                else:
+                    token = Token(TokenType.DIV, self.ch)
             case '"':
                 string_literal = []
                 self._advance()
@@ -134,6 +142,9 @@ class Lexer:
                     self.position += 1
                 else:
                     token = Token(TokenType.GT, self.ch)
+            case '\n':
+                self._advance()
+                return self.next_token()
             case ' ':
                 return Token(TokenType.EOF, '')
             case ch:
@@ -155,6 +166,8 @@ class Lexer:
         self.position += 1
         if self.position < len(self.input_string):
             self.ch = self.input_string[self.position]
+        else:
+            self.ch = ' '
 
     def _skip_whitespace(self) -> None:
         while self.ch.isspace() and self.position < len(self.input_string):

@@ -301,6 +301,8 @@ class Parser:
                 stmt = self.parse_return_statement()
             case TokenType.FOR:
                 stmt = self.parse_for_statement()
+            case TokenType.COMMENT:
+                return None
             case _:
                 stmt = self.parse_expression_statement()
         return stmt

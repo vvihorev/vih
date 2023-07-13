@@ -139,6 +139,8 @@ def test_nested_block_statements():
         ('a;', 'identifier not found: a'),
         ('for (i=0;i<5;let i=i+1) {a;}', 'identifier not found: a'),
         ('for (i=0;a;let i=i+1) {a;}', 'identifier not found: a'),
+        ('let a = [1, 2, 3]; a[3]', 'Index 3 out of bounds for collection of len 3'),
+        ('let a = 2; a[3]', 'Exprected collection for indexing, got ObjectType.INTEGER'),
     ]
 )
 def test_error_handling(input, expected_message):
@@ -196,3 +198,12 @@ def test_function_application(input, expected_value):
     evaluated = get_eval(input)
     check_integer_object(evaluated, expected_value)
 
+
+@pytest.mark.parametrize(
+    'input,expected_value', [
+        ('let A = [1, 2, 3]; A[1]', 2),
+    ]
+)
+def test_list_operations(input, expected_value):
+    evaluated = get_eval(input)
+    check_integer_object(evaluated, expected_value)

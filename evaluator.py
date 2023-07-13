@@ -11,10 +11,12 @@ from parser import (
     PrefixExpression,
     InfixExpression,
     CallExpression,
+    IndexExpression,
     IfExpression,
     IntegerLiteral,
     StringLiteral,
     FunctionLiteral,
+    ListLiteral,
     Boolean,
     Identifier,
 )
@@ -60,6 +62,7 @@ class ObjectType(Enum):
     BOOLEAN = auto()
     RETURN_VALUE = auto()
     FUNCTION = auto()
+    LIST = auto()
     STRING = auto()
     ERROR = auto()
     NULL = auto()
@@ -121,6 +124,21 @@ class FunctionObject(Object):
     def compact_str(self):
         params = ', '.join([str(p) for p in self.parameters])
         return f"func({params})"
+
+
+class ListObject(Object):
+    def __init__(self, elements):
+        super().__init__(ObjectType.FUNCTION)
+        self.elements = elements
+
+    def get_index(self, idx):
+        if idx.value < 0 or idx.value >= len(self.elements):
+            return new_error("Index %d out of bounds for collection of len %d", idx.value, len(self.elements))
+        return self.elements[idx.value]
+
+    def __str__(self) -> str:
+        elements = ', '.join([str(e) for e in self.elements])
+        return f"[{elements}]"
 
 
 class ErrorObject(Object):
@@ -196,6 +214,10 @@ def eval(node, env: Environment):
         params = node.parameters
         body = node.body
         return FunctionObject(params, body, env)
+    if isinstance(node, ListLiteral):
+        element_nodes = node.elements
+        element_objects = [eval(elem, env) for elem in element_nodes]
+        return ListObject(element_objects)
     if isinstance(node, CallExpression):
         function = eval(node.function, env)
         if is_error(function):
@@ -204,6 +226,16 @@ def eval(node, env: Environment):
         if len(args) == 1 and is_error(args[0]):
             return args[0]
         return apply_function(function, args)
+    if isinstance(node, IndexExpression):
+        collection = eval(node.collection, env)
+        if is_error(collection):
+            return collection
+        if not isinstance(collection, ListObject):
+            return new_error("Exprected collection for indexing, got %s", collection.otype)
+        idx = eval(node.idx, env)
+        if is_error(idx):
+            return idx
+        return collection.get_index(idx)
     return None
 
 

@@ -30,6 +30,7 @@ PRECEDENCES = {
     TokenType.LEQ: Precedence.LESSGREATER,
     TokenType.GEQ: Precedence.LESSGREATER,
     TokenType.LPAR: Precedence.CALL,
+    TokenType.LBRACKET: Precedence.CALL,
 }
 
 
@@ -147,6 +148,16 @@ class StringLiteral(Expression):
         return f'"{self.value}"'
 
 
+class ListLiteral(Expression):
+    def __init__(self, token, elements: list):
+        super().__init__(token)
+        self.elements: list = elements
+
+    def __str__(self):
+        elements = [str(e) for e in self.elements]
+        return f"[{', '.join(elements)}]"
+
+
 class FunctionLiteral(Expression):
     def __init__(self, token):
         super().__init__(token)
@@ -209,6 +220,16 @@ class CallExpression(Expression):
         return f"{self.function}({args})"
 
 
+class IndexExpression(Expression):
+    def __init__(self, token):
+        super().__init__(token)
+        self.collection: Optional[ListLiteral]
+        self.idx: Optional[Expression]
+
+    def __str__(self):
+        return f"{self.collection}[{self.idx}]"
+
+
 def trace(func):
     def wrapper(self, *args, **kwargs):
         if self.trace_parsing:
@@ -241,6 +262,7 @@ class Parser:
             TokenType.LPAR: self.parse_grouped_expression,
             TokenType.IF: self.parse_if_expression,
             TokenType.STRING: self.parse_string,
+            TokenType.LBRACKET: self.parse_list_literal,
         }
         self.infix_functions = {
             TokenType.PLUS: self.parse_infix_expression,
@@ -254,6 +276,7 @@ class Parser:
             TokenType.LEQ: self.parse_infix_expression,
             TokenType.GEQ: self.parse_infix_expression,
             TokenType.LPAR: self.parse_call_expression,
+            TokenType.LBRACKET: self.parse_index_expression,
         }
         self.trace_parsing: bool = trace_parsing
         self.indent = 0
@@ -420,6 +443,15 @@ class Parser:
         return expr
 
     @trace
+    def parse_index_expression(self, collection):
+        expr = IndexExpression(self.cur_token)
+        expr.collection = collection
+        self.advance_tokens()
+        expr.idx = self.parse_expression(Precedence.LOWEST)
+        self._expect_peek(TokenType.RBRACKET)
+        return expr
+
+    @trace
     def parse_call_expression(self, function):
         expr = CallExpression(self.cur_token)
         expr.function = function
@@ -460,6 +492,17 @@ class Parser:
     @trace
     def parse_string(self):
         return StringLiteral(self.cur_token, self.cur_token.literal)
+
+    @trace
+    def parse_list_literal(self):
+        values = []
+        self.advance_tokens()
+        while not self._cur_token_is(TokenType.RBRACKET):
+            values.append(self.parse_expression(Precedence.LOWEST))
+            self.advance_tokens()
+            if self._cur_token_is(TokenType.COMMA):
+                self.advance_tokens()
+        return ListLiteral(self.cur_token, values)
 
     @trace
     def parse_function_literal(self):

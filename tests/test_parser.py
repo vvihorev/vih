@@ -6,15 +6,18 @@ from parser import (
     Identifier,
     IntegerLiteral,
     FunctionLiteral,
+    ListLiteral,
     Boolean,
     ReturnStatement,
     BlockStatement,
     ForStatement,
     ExpressionStatement,
+    LetStatement,
     PrefixExpression,
     InfixExpression,
     IfExpression,
     CallExpression,
+    IndexExpression,
     StringLiteral,
 )
 
@@ -356,4 +359,29 @@ def test_function_call_expression():
 def test_function_call_printing():
     program = get_program('add(1, 2);')
     assert str(program) == 'add(1, 2);'
+
+
+def test_list_literal():
+    program = get_program("let a = [1, 2, 3];")
+    stmts = program.statements
+    assert len(stmts) == 1
+    let_stmt = stmts[0]
+    assert type(let_stmt) == LetStatement
+    list_literal = let_stmt.value
+    assert type(list_literal) == ListLiteral
+    for value, exp_val in zip(list_literal.elements, [1, 2, 3]):
+        check_integer_literal(value, exp_val)
+
+
+def test_index_expression():
+    program = get_program("a[2];")
+    index_expr = program.statements[0].expression
+    assert type(index_expr) == IndexExpression
+    check_identifier(index_expr.collection, "a")
+    check_integer_literal(index_expr.idx, 2)
+
+
+def test_list_printing():
+    program = get_program('[1, 2, 3];')
+    assert str(program) == '[1, 2, 3];'
 

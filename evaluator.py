@@ -27,6 +27,11 @@ class Environment:
         self.store = {}
         self.builtin = {
             "len": BuiltinObject(builtin_len),
+            "first": BuiltinObject(builtin_first),
+            "last": BuiltinObject(builtin_last),
+            "rest": BuiltinObject(builtin_rest),
+            "push": BuiltinObject(builtin_push),
+            "puts": BuiltinObject(builtin_puts),
         }
         self.outer: Optional[Environment] = None
         self.trace_eval = trace_eval
@@ -240,8 +245,8 @@ def eval(node, env: Environment):
         if is_error(function):
             return function
         args = eval_expressions(node.arguments, env)
-        if len(args) == 1 and is_error(args[0]):
-            return args[0]
+        if is_error(args):
+            return args
         return apply_function(function, args)
     if isinstance(node, IndexExpression):
         collection = eval(node.collection, env)
@@ -304,6 +309,8 @@ def apply_function(function, args):
     if isinstance(function, BuiltinObject):
         return function.fn(*args)
     if isinstance(function, FunctionObject):
+        if len(args) != len(function.parameters):
+            return new_error("function requires %d parameters, got %d", len(function.parameters), len(args))
         extended_env = extend_function_env(function, args)
         evaluated = eval(function.body, extended_env)
         return unwrap_return_value(evaluated)
@@ -464,5 +471,52 @@ def builtin_len(*args):
         return ErrorObject('Builtin function len expected one argument')
     if isinstance(args[0], StringObject):
         return IntegerObject(len(args[0].value))
+    if isinstance(args[0], ListObject):
+        return IntegerObject(len(args[0].elements))
     return ErrorObject('Builtin function len expected type String or List')
+
+
+def builtin_first(*args):
+    if len(args) != 1:
+        return ErrorObject('Builtin function first expected one argument')
+    if isinstance(args[0], ListObject):
+        if len(args[0].elements) < 1:
+            return ErrorObject('List is empty')
+        return args[0].elements[0]
+    return ErrorObject('Builtin function first expected type List')
+
+
+def builtin_last(*args):
+    if len(args) != 1:
+        return ErrorObject('Builtin function last expected one argument')
+    if isinstance(args[0], ListObject):
+        if len(args[0].elements) < 1:
+            return ErrorObject('List is empty')
+        return ListObject([args[0].elements[-1]])
+    return ErrorObject('Builtin function last expected type List')
+
+
+def builtin_rest(*args):
+    if len(args) != 1:
+        return ErrorObject('Builtin function rest expected one argument')
+    if isinstance(args[0], ListObject):
+        if len(args[0].elements) <= 1:
+            return ListObject([])
+        return ListObject(args[0].elements[1:])
+    return ErrorObject('Builtin function rest expected type List')
+
+
+def builtin_push(*args):
+    if len(args) != 2:
+        return ErrorObject('Builtin function push expected two arguments')
+    value, lst = args
+    if isinstance(lst, ListObject):
+        lst.elements.append(value)
+        return lst
+    return ErrorObject('Builtin function push expected first argument of type List')
+
+
+def builtin_puts(*args):
+    for arg in args:
+        print(str(arg))
 

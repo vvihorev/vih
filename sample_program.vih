@@ -1,0 +1,24 @@
+let map = func(arr, fn) {
+    let iter = func(arr, accumulated) {
+        if (len(arr) == 0) {
+            return accumulated;
+        };
+        iter(rest(arr), push(fn(first(arr)), accumulated));
+    };
+    iter(arr, []);
+};
+
+let reduce = func(arr, accum, fn) {
+    if (len(arr) == 0) {
+        return accum;
+    }
+    let accum = fn(first(arr), accum);
+    reduce(rest(arr), accum, fn);
+}
+
+let double = func(x) { x * 2; }
+let add = func(x, y) { x + y }
+let sum = func(arr) { reduce(arr, 0, add) }
+
+let answer = sum(map([1, 2, 3], double));
+puts(answer);

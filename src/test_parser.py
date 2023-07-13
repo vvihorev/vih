@@ -1,7 +1,7 @@
 import pytest
 
-from lexer import Lexer, TokenType
-from parser import (
+from .lexer import Lexer, TokenType
+from .parser import (
     Parser,
     Identifier,
     IntegerLiteral,

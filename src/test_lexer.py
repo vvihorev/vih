@@ -1,6 +1,6 @@
 from pytest import mark
 
-from lexer import TokenType, Lexer
+from .lexer import TokenType, Lexer
 
 
 @mark.parametrize(

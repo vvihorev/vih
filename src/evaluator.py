@@ -1,7 +1,7 @@
 from typing import Optional
 from enum import Enum, auto
 
-from parser import (
+from .parser import (
     Program,
     ExpressionStatement,
     BlockStatement,
@@ -146,7 +146,7 @@ class BuiltinObject(Object):
 
 class ListObject(Object):
     def __init__(self, elements):
-        super().__init__(ObjectType.FUNCTION)
+        super().__init__(ObjectType.LIST)
         self.elements = elements
 
     def get_index(self, idx):

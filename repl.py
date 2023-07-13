@@ -1,6 +1,6 @@
-from lexer import Lexer
-from parser import Parser
-from evaluator import eval, Environment
+from src.lexer import Lexer
+from src.parser import Parser
+from src.evaluator import eval, Environment
 
 
 print("Welcome to the vih REPL!")

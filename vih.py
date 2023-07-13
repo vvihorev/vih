@@ -1,8 +1,8 @@
 import sys
 
-from lexer import Lexer, TokenType
-from parser import Parser
-from evaluator import eval, Environment
+from src.lexer import Lexer, TokenType
+from src.parser import Parser
+from src.evaluator import eval, Environment
 
 
 option = None

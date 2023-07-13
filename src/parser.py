@@ -2,7 +2,7 @@ from enum import Enum, auto
 from abc import ABC, abstractmethod
 from typing import Optional, List
 
-from lexer import Lexer, Token, TokenType
+from .lexer import Lexer, Token, TokenType
 
 
 class Precedence(Enum):

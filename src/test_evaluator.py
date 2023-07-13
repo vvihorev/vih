@@ -1,6 +1,6 @@
 import pytest
-from test_parser import get_program
-from evaluator import eval, ObjectType, Environment
+from .test_parser import get_program
+from .evaluator import eval, ObjectType, Environment
 
 
 def get_eval(input):

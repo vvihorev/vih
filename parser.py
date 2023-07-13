@@ -13,6 +13,7 @@ class Precedence(Enum):
     PRODUCT = auto()
     PREFIX = auto()
     CALL = auto()
+    INDEX = auto()
 
     def __lt__(self, other):
         return self.value < other.value
@@ -30,7 +31,7 @@ PRECEDENCES = {
     TokenType.LEQ: Precedence.LESSGREATER,
     TokenType.GEQ: Precedence.LESSGREATER,
     TokenType.LPAR: Precedence.CALL,
-    TokenType.LBRACKET: Precedence.CALL,
+    TokenType.LBRACKET: Precedence.INDEX,
 }
 
 
@@ -455,13 +456,13 @@ class Parser:
     def parse_call_expression(self, function):
         expr = CallExpression(self.cur_token)
         expr.function = function
-        expr.arguments = self.parse_call_arguments()
+        expr.arguments = self.parse_expression_list(TokenType.RPAR)
         return expr
 
     @trace
-    def parse_call_arguments(self):
+    def parse_expression_list(self, end: TokenType):
         args = []
-        if self._peek_token_is(TokenType.RPAR):
+        if self._peek_token_is(end):
             self.advance_tokens()
             return args
         self.advance_tokens() 
@@ -472,7 +473,7 @@ class Parser:
             self.advance_tokens()
             args.append(self.parse_expression(Precedence.LOWEST))
 
-        if not self._expect_peek(TokenType.RPAR):
+        if not self._expect_peek(end):
             return None
         return args
 
@@ -495,13 +496,9 @@ class Parser:
 
     @trace
     def parse_list_literal(self):
-        values = []
-        self.advance_tokens()
-        while not self._cur_token_is(TokenType.RBRACKET):
-            values.append(self.parse_expression(Precedence.LOWEST))
-            self.advance_tokens()
-            if self._cur_token_is(TokenType.COMMA):
-                self.advance_tokens()
+        values = self.parse_expression_list(TokenType.RBRACKET)
+        if values is None:
+            return None
         return ListLiteral(self.cur_token, values)
 
     @trace

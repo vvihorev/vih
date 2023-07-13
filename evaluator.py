@@ -231,9 +231,10 @@ def eval(node, env: Environment):
         body = node.body
         return FunctionObject(params, body, env)
     if isinstance(node, ListLiteral):
-        element_nodes = node.elements
-        element_objects = [eval(elem, env) for elem in element_nodes]
-        return ListObject(element_objects)
+        elements = eval_expressions(node.elements, env)
+        if len(elements) == 1 and isinstance(elements[0], ErrorObject):
+            return elements[0]
+        return ListObject(elements)
     if isinstance(node, CallExpression):
         function = eval(node.function, env)
         if is_error(function):
@@ -246,12 +247,10 @@ def eval(node, env: Environment):
         collection = eval(node.collection, env)
         if is_error(collection):
             return collection
-        if not isinstance(collection, ListObject):
-            return new_error("Exprected collection for indexing, got %s", collection.otype)
         idx = eval(node.idx, env)
         if is_error(idx):
             return idx
-        return collection.get_index(idx)
+        return eval_index_expression(collection, idx)
     return None
 
 
@@ -328,6 +327,12 @@ def new_enclosed_environment(outer: Environment):
     env = Environment(outer.trace_eval)
     env.outer = outer
     return env
+
+
+def eval_index_expression(collection, idx):
+    if isinstance(collection, ListObject) and isinstance(idx, IntegerObject):
+        return collection.get_index(idx)
+    return new_error("Exprected collection for indexing, got ObjectType.INTEGER")
 
 
 def eval_prefix_expression(operator, right):
